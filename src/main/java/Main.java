@@ -52,6 +52,22 @@ public class Main {
         System.out.println("Transfere 10 da conta A para conta X: " +wallet.transfer("A", "X", 10));
         wallet.printAccounts();
 
+        // Teste case 03
+        System.out.println("\n\nTeste case 03");
+        wallet = new WalletService();
+
+        System.out.println("Criando A: "+ wallet.create("A"));
+        System.out.println("Criando B: "+ wallet.create("B"));
+
+        System.out.println("Deposita 100 na conta A: " +wallet.deposit("A", 100));
+        System.out.println("Saldo conta A: " + wallet.balance("A") );
+        System.out.println("Saldo conta B: " + wallet.balance("B") );
+        System.out.println("Saldo conta X: " + wallet.balance("X") );
+
+
+
+
+
 
     }
 

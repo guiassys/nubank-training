@@ -4,7 +4,7 @@ import java.util.Map;
 public class WalletService {
 
     private final Map<String, Account> accounts = new HashMap<>();
-    private static final String separator = "--------------------------------------";
+    private static final String SEPARATOR = "--------------------------------------";
 
     /**
      * Creates a new account.
@@ -74,12 +74,25 @@ public class WalletService {
         return true;
     }
 
+    /**
+     * Get balance applying filter by accountId
+     *
+     * @return -1 if the account is not found or the balance value otherwise
+     */
+    public int balance(String accountId){
+        Account account = getAccountById(accountId);
+        if(account == null){
+            return -1;
+        }
+        return account.getBalance();
+    }
+
     public void printAccounts(){
-        System.out.println(separator);
-        accounts.forEach((accountId, account) -> {;
+        System.out.println(SEPARATOR);
+        accounts.forEach((accountId, account) -> {
             System.out.println("Saldo da conta " + accountId + ": " + account.getBalance());
         });
-        System.out.println(separator);
+        System.out.println(SEPARATOR);
     }
 
 }
