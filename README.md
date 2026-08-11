@@ -284,4 +284,135 @@ List<String> topSpenders(int k);
 | **Comparatores e Empates** | Para a Min-Heap de tamanho $K$, o pior elemento fica na raiz para ser removido se a fila exceder tamanho $K$. Por isso, no desempate de valor gasto igual, a conta com ID lexicograficamente **maior** (ex: `"B" > "A"`) é considerada "pior" na Heap (`a2.getId().compareTo(a1.getId())`). Após a descarregada da Heap e a chamada a `Collections.reverse()`, a ordem alfabética crescente final (`"A"`, `"B"`) é restaurada. |
 | **Tratamento de Erros e Borda**| - Verificação para $K \le 0$ retornando `Collections.emptyList()`.<br>- Filtro para ignorar contas com `totalSpent <= 0`.<br>- Suporte transparente para quando $K$ for maior do que o total de contas elegíveis com gastos registrados. |
 
+
+---
+
+# 🟠 Nível 3 — Operações Temporais Avançadas, Cashbacks e Janelas Deslizantes
+
+## Contexto
+
+Com o sistema básico e relatórios agregados funcionando, a plataforma precisa de mecanismos financeiros mais avançados e realistas: transações com tempo de expiração/agendamento, funcionalidade de rollback (estorno) de pagamentos e cálculo de métricas em tempo real sobre janelas de tempo deslizantes (*Sliding Windows*).
+
+---
+
+## 🛠️ Especificação de Novos Comandos
+
+### 1. `PAYMENT_WITH_CASHBACK`
+* **Sintaxe:** `PAYMENT_WITH_CASHBACK <accountId> <amount> <timestamp> <cashbackPercent>`
+* **Descrição:** Executa um pagamento debitando o `amount` da conta. No entanto, concede um retorno de saldo (*cashback*) calculado sobre a porcentagem `cashbackPercent` (padrão inteiro `0-100`, arredondado para baixo `floor`). O valor do cashback deve ser creditado de volta na conta exatamente após **86.400.000 ms (24 horas)** a partir do `timestamp` do pagamento.
+* **Retorno:**
+  * `true`: Pagamento processado com sucesso.
+  * `false`: Falha (conta inexistente, saldo insuficiente ou porcentagem inválida).
+* **Nota de Requisito:** Se uma operação subsequente no tempo $T_2$ for chamada, todo cashback com tempo de liquidação $T_{liquidacao} \le T_2$ deve ser aplicado **antes** de processar a nova operação.
+
+### 2. `REFUND`
+* **Sintaxe:** `REFUND <accountId> <transactionId> <timestamp>`
+* **Descrição:** Realiza o estorno parcial ou total de um `PAYMENT` efetuado anteriormente.
+* **Regras:**
+  * O valor retornado é creditado no saldo e deduzido do `totalSpent` do usuário.
+  * Se a transação original gerou cashback pendente ainda não creditado, esse cashback pendente deve ser cancelado proporcionalmente ou totalmente.
+  * Não é permitido reembolsar uma transação mais de uma vez ou reembolsar um valor maior do que o pagamento original.
+* **Retorno:**
+  * `true`: Reembolso processado com sucesso.
+  * `false`: Transação inexistente, conta divergente, ou reembolso já processado.
+
+### 3. `SPENT_IN_WINDOW`
+* **Sintaxe:** `SPENT_IN_WINDOW <accountId> <windowSizeMs> <currentTimestamp>`
+* **Descrição:** Retorna o valor total gasto (*total spent*) pela conta apenas no intervalo de tempo referente à janela deslizante: `[currentTimestamp - windowSizeMs, currentTimestamp]`.
+* **Retorno:**
+  * `int`: Valor total acumulado de débitos (`PAYMENT` e `TRANSFER` enviados) dentro do intervalo de tempo. Se a conta não existir ou não tiver gastos na janela, retorna `0`.
+
+---
+
+# 🟠 Nível 3 — Operações Temporais Avançadas, Cashbacks e Janelas Deslizantes
+
+## Contexto
+
+Com o sistema básico e relatórios agregados funcionando, a plataforma precisa de mecanismos financeiros mais avançados e realistas: transações com tempo de expiração/agendamento, funcionalidade de rollback (estorno) de pagamentos e cálculo de métricas em tempo real sobre janelas de tempo deslizantes (*Sliding Windows*).
+
+---
+
+## 🛠️ Especificação de Novos Comandos
+
+### 1. `PAYMENT_WITH_CASHBACK`
+* **Sintaxe:** `PAYMENT_WITH_CASHBACK <accountId> <amount> <timestamp> <cashbackPercent>`
+* **Descrição:** Executa um pagamento debitando o `amount` da conta. No entanto, concede um retorno de saldo (*cashback*) calculado sobre a porcentagem `cashbackPercent` (padrão inteiro `0-100`, arredondado para baixo `floor`). O valor do cashback deve ser creditado de volta na conta exatamente após **86.400.000 ms (24 horas)** a partir do `timestamp` do pagamento.
+* **Retorno:**
+  * `String`: Identificador gerado da transação (ex: `"TX-1"`) em caso de sucesso.
+  * `null`: Falha (conta inexistente, saldo insuficiente ou porcentagem inválida).
+* **Nota de Requisito:** Se uma operação subsequente no tempo $T_2$ for chamada, todo cashback com tempo de liquidação $T_{liquidacao} \le T_2$ deve ser aplicado **antes** de processar a nova operação.
+
+### 2. `REFUND`
+* **Sintaxe:** `REFUND <accountId> <transactionId> <timestamp>`
+* **Descrição:** Realiza o estorno de um pagamento efetuado anteriormente.
+* **Regras:**
+  * O valor retornado é creditado no saldo e deduzido do `totalSpent` do usuário.
+  * Se a transação original gerou cashback pendente ainda não creditado, esse cashback pendente deve ser cancelado antes de maturar.
+  * Não é permitido reembolsar uma transação mais de uma vez.
+* **Retorno:**
+  * `true`: Reembolso processado com sucesso.
+  * `false`: Transação inexistente, conta divergente, ou reembolso já processado.
+
+### 3. `SPENT_IN_WINDOW`
+* **Sintaxe:** `SPENT_IN_WINDOW <accountId> <windowSizeMs> <currentTimestamp>`
+* **Descrição:** Retorna o valor total gasto (*total spent*) pela conta apenas no intervalo de tempo referente à janela deslizante: `[currentTimestamp - windowSizeMs, currentTimestamp]`.
+* **Retorno:**
+  * `int`: Valor total acumulado de débitos (`PAYMENT` e `TRANSFER` enviados) dentro do intervalo de tempo. Se a conta não existir ou não tiver gastos na janela, retorna `0`.
+
+---
+
+### 📝 Exemplo Prático (Nível 3)
+
+**Entrada (Operações):**
+
+```
+CREATE A
+DEPOSIT A 1000
+PAYMENT_WITH_CASHBACK A 200 1000000 10  // Gasta 200, gera cashback de 20 (10%) para t = 1000000 + 86400000
+SPENT_IN_WINDOW A 500000 1200000       // Janela [700000, 1200000]. O pagamento de t=1000000 entra.
+PAYMENT A 300 87400000                  // Executa em t = 87400000. O cashback de 20 já maturou! Saldo antes do débito: (800 + 20) = 820.
+SPENT_IN_WINDOW A 1000000 87400000     // Janela [86400000, 87400000]. Apenas o pagamento de 300 entra.
+```
+
+**Saída esperada:**
+```
+true
+1000
+TX-1
+200
+true
+300
+```
+
+---
+
+# 📐 Estratégia de Desenvolvimento (Nível 3)
+
+### Etapa 7 — Histórico de Transações e Liquidação de Cashbacks
+Implementar a rastreabilidade de transações por ID único e uma fila de prioridade por tempo para processamento de pendências (*Cashback Queue*).
+
+* **Pergunta de design:** Como garantir que saldos pendentes (como cashbacks agendados) sejam liquidados na ordem cronológica correta antes de qualquer operação de leitura ou escrita sem criar loops infinitos?
+* **Decisão:** Criação da classe `CashbackEvent` (implements `Comparable`) mantida em uma `PriorityQueue` ordenada por `maturityTimestamp` e indexada em um `Map<String, CashbackEvent>` para cancelamento rápido. O método utilitário `processPendingCashbacks(currentTimestamp)` foi introduzido no `WalletService` e é obrigatoriamente invocado no início de cada operação pública (`payment`, `refund`, `balance` com timestamp, etc.).
+* **Justificativa:** Em simulações discretas de tempo, a abordagem *lazy processing* garante determinismo e evita o overhead e a complexidade de threads de background. Ao processar a fila antes de qualquer cálculo de saldo ou validação de débito, garantimos que os saldos estejam rigorosamente atualizados.
+
+---
+
+### Etapa 8 — Janela Deslizante (Sliding Window Query)
+Implementar a consulta eficiente de gastos dentro de um intervalo de tempo fixo $T_{fim} - T_{inicio}$.
+
+* **Pergunta de design:** Como calcular o total de gastos em uma janela de tempo em escala sub-linearmemte ($O(\log N)$) em vez de iterar por todo o histórico de transações da conta $O(N)$?
+* **Decisão:** Incorporação de um `NavigableMap<Long, Integer>` (`TreeMap`) interno na classe `Account` para mapear `timestamp -> valorGasto`. A consulta utiliza o método `spendingHistory.subMap(startTimestamp, true, endTimestamp, true)`.
+* **Justificativa:** O `TreeMap` mantém as chaves temporais ordenadas por árvore rubro-negra. O método `subMap` obtém a fatia exata de intervalos temporais em tempo $O(\log N)$, permitindo somar apenas as transações válidas do intervalo sem percorrer todo o histórico da conta.
+
+---
+
+# 🧠 Aprendizados & Anotações — Nível 3
+
+| Tópico | Anotações / Reflexões |
+| :----- | :-------------------- |
+| **Estruturas de Dados** | **`TreeMap<Long, Integer>`**: Utilizado em `Account` para manter a linha do tempo de gastos e realizar cortes por janela com `.subMap()` em $O(\log N)$.<br>**`PriorityQueue<CashbackEvent>`**: Min-Heap para simular a fila de liquidação temporizada de cashbacks.<br>**`Map<String, Transaction>` / `Map<String, CashbackEvent>`**: Mapeamento direto de IDs para estorno atômico e cancelamento $O(1)$ de eventos pendentes. |
+| **Complexidade** | **`paymentWithCashback()`**: $O(\log E)$ (inserção na Heap de eventos).<br>**`refund()`**: $O(1)$ para cancelamento de evento pendente + $O(\log T)$ para reajuste na árvore temporária da conta.<br>**`spentInWindow()`**: $O(\log T + V)$ onde $T$ é o total de transações e $V$ é o número de transações na janela. |
+| **Decisões de Design** | **Sobrecarga do `balance(accountId, timestamp)`**: Mantida compatibilidade com Níveis 1 e 2 criando uma sobrecarga que avança o tempo antes de consultar o saldo.<br>**Cálculo Exato com Inteiros**: Evitado `double` em porcentagens de cashback `(amount * cashbackPercent) / 100` para prevenir erros de truncamento em ponto flutuante. |
+| **Tratamento de Erros e Borda**| - Cancelamento de evento pendente via *flag* `isCancelled()` na liquidação lazy caso ocorra `REFUND` antes de 24h.<br>- Suporte a múltiplos pagamentos no mesmo `timestamp` com `spendingHistory.merge(timestamp, amount, Integer::sum)`. |
+
 > *Nota: Novos requisitos serão adicionados apenas após a finalização do nível atual.*

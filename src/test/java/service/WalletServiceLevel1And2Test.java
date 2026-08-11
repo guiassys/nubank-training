@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Implementa testes unitários para a classe WalletService. Considere que a Classe WalletService é responsável por
  * controlar o fluxo de vários objeto Account.
  */
-class WalletServiceTest {
+class WalletServiceLevel1And2Test {
 
     private WalletService walletService;
 
