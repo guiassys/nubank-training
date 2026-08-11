@@ -1,3 +1,5 @@
+package model;
+
 public class Account {
 
     private final String id;

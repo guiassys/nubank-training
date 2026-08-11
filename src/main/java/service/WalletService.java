@@ -1,3 +1,7 @@
+package service;
+
+import model.Account;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,7 +28,7 @@ public class WalletService {
     /**
      * Get account by id.
      *
-     * @return Account object or null if account not found
+     * @return model.Account object or null if account not found
      */
     public Account getAccountById(String accountId){
         return accounts.get(accountId);
