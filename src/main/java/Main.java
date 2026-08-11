@@ -9,18 +9,18 @@ public class Main {
 
     public static void main(String[] args) {
 
-        // Show one squad
-        System.out.print("\n -- Show one squad --\n");
+        // Printing one squad
+        System.out.print("\n -- SQUAD --\n");
         int index = 1;
         while(index <= TOTAL_LINES){
             System.out.print("\n"+SIMBOL.repeat(TOTAL_SIMBOLS_BY_LINE));
             index++;
         }
 
-        // Show one triangle
-        System.out.print("\n -- Show one triangle --\n");
+        // Printing one triangle
+        System.out.print("\n -- TRIANGLE --\n");
         index = 1;
-        while(index <= TOTAL_LINES){
+        while(index <= (TOTAL_LINES*2)){
             boolean isImparNumber = index % 2 != 0;
 
             if(isImparNumber){
