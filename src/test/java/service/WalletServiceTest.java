@@ -1,12 +1,17 @@
+package service;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import service.WalletService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Implementa testes unitários para a classe WalletService. Considere que a Classe WalletService é responsável por
+ * controlar o fluxo de vários objeto Account.
+ */
 class WalletServiceTest {
 
     private WalletService walletService;

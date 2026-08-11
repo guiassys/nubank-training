@@ -10,7 +10,7 @@ public class Main {
     public static void main(String[] args) {
 
         // Printing one squad
-        System.out.print("\n -- SQUAD --\n");
+        System.out.print("\n\n ------ SQUAD ------");
         int index = 1;
         while(index <= TOTAL_LINES){
             System.out.print("\n"+SIMBOL.repeat(TOTAL_SIMBOLS_BY_LINE));
@@ -18,7 +18,7 @@ public class Main {
         }
 
         // Printing one triangle
-        System.out.print("\n -- TRIANGLE --\n");
+        System.out.print("\n\n ----- TRIANGLE -----");
         index = 1;
         while(index <= (TOTAL_LINES*2)){
             boolean isImparNumber = index % 2 != 0;
@@ -30,6 +30,8 @@ public class Main {
 
             index++;
         }
+
+        System.out.print("\n\n -- Boa sorte! --");
 
     }
 

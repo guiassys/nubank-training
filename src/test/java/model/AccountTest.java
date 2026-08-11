@@ -1,9 +1,14 @@
-import model.Account;
+package model;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Implementa testes unitários para a classe Account. Considere que a Classe Account é responsável por alterar o seu
+ * próprio estado.
+ */
 class AccountTest {
 
     private Account account;
