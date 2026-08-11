@@ -4,11 +4,13 @@ public class Account {
 
     private final String id;
     private int balance;
+    private int totalSpent;
     private static final String AMOUNT_MUST_BE_GREATER_THAN_ZERO_MSG = "Amount must be greater than zero.";
 
     public Account(String id){
         this.id = id;
         this.balance = 0;
+        this.totalSpent = 0;
     }
 
     public String getId(){
@@ -18,6 +20,10 @@ public class Account {
     public int getBalance(){
         return this.balance;
 
+    }
+
+    public int getTotalSpent(){
+        return this.totalSpent;
     }
 
     public void deposit(int amount){
@@ -39,6 +45,7 @@ public class Account {
         }
 
         balance -= amount;
+        totalSpent += amount;
 
         return true;
     }

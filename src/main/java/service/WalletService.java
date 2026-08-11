@@ -91,12 +91,15 @@ public class WalletService {
         return account.getBalance();
     }
 
-    public void printAccounts(){
-        System.out.println(SEPARATOR);
-        accounts.forEach((accountId, account) -> {
-            System.out.println("Saldo da conta " + accountId + ": " + account.getBalance());
-        });
-        System.out.println(SEPARATOR);
+    public boolean payment(String accountId, int amount, long timestamp){
+        if(amount <= 0){
+            return false;
+        }
+        Account account = getAccountById(accountId);
+        if(account == null){
+            return false;
+        }
+        return account.withdraw(amount);
     }
 
 }
