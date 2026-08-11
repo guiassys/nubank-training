@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="
+             http://maven.apache.org/POM/4.0.0
+             https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -10,16 +10,26 @@
     <artifactId>nubank-training</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
+    <packaging>jar</packaging>
+
+    <name>nubank-training</name>
+
+    <description>
+        Projeto de treinamento para entrevistas técnicas e CodeSignal.
+    </description>
+
     <properties>
-        <maven.compiler.release>21</maven.compiler.release>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
+        <maven.compiler.release>21</maven.compiler.release>
+
         <junit.version>5.13.4</junit.version>
+
     </properties>
 
     <dependencies>
 
-        <!-- JUnit 5 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -30,26 +40,24 @@
     </dependencies>
 
     <build>
+
         <plugins>
 
-            <!-- Java 21 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.14.0</version>
                 <configuration>
-                    <release>21</release>
+                    <release>${maven.compiler.release}</release>
                 </configuration>
             </plugin>
 
-            <!-- Executar Main -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.5.0</version>
             </plugin>
 
-            <!-- JUnit -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -57,6 +65,7 @@
             </plugin>
 
         </plugins>
+
     </build>
 
 </project>
