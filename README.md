@@ -140,8 +140,6 @@ int balance(String accountId);
 
 # 🧠 Aprendizados & Anotações
 
-# 🧠 Aprendizados & Anotações
-
 | Tópico | Anotações / Reflexões |
 | :----- | :-------------------- |
 | **Estruturas de Dados** | Foi escolhido **`HashMap<String, model.Account>`** para armazenar as contas, pois o `accountId` é uma **chave única** e será utilizado frequentemente para localizar uma conta. Essa estrutura oferece busca, inserção e remoção com complexidade esperada **O(1)**. A escolha evita buscas lineares que ocorreriam com uma `ArrayList`, cuja complexidade seria **O(n)** para localizar uma conta pelo `accountId`. Para percorrer todas as contas, podem ser utilizados `entrySet()`, `values()` ou `keySet()`, sendo a iteração **O(n)**. Também foi reforçada a diferença entre **busca por chave** (`HashMap`) e **acesso por índice** (`ArrayList`). |
@@ -161,11 +159,103 @@ int balance(String accountId);
 
 # 🚀 Evolução Futura
 
-Após a conclusão do **Nível 1**, o exercício avançará para novos requisitos:
+# 🟡 Nível 2 — Agregadores, Histórico e Métricas (Top K)
 
-- [ ] **Top K** contas por saldo
-- [ ] Histórico de operações
-- [ ] Operação de **UNDO**
-- [ ] Consultas por **timestamp**
+## Contexto
+
+Com o núcleo do sistema operacional, precisamos adicionar inteligência financeira à plataforma. O sistema agora deve suportar transações temporais com `PAYMENT` e ser capaz de extrair relatórios de alto desempenho sobre o comportamento dos usuários através da consulta `TOP_SPENDERS`.
+
+---
+
+## 🛠️ Especificação de Novos Comandos
+
+### 1. `PAYMENT`
+* **Sintaxe:** `PAYMENT <accountId> <amount> <timestamp>`
+* **Descrição:** Executa um pagamento a partir da conta informada no instante de tempo especificado. O valor é debitado permanentemente da conta e contabilizado no total gasto (*total spent*) do usuário.
+* **Retorno:**
+  * `true`: Pagamento realizado com sucesso (conta existe e possui saldo suficiente).
+  * `false`: Falha na operação (conta inexistente ou saldo insuficiente).
+
+### 2. `TOP_SPENDERS`
+* **Sintaxe:** `TOP_SPENDERS <k>`
+* **Descrição:** Retorna a lista dos $K$ usuários que mais gastaram recursos no sistema (soma de todas as operações de `PAYMENT` e `TRANSFER` enviadas com sucesso).
+* **Regra de Desempate:** Se duas ou mais contas possuírem exatamente o mesmo total gasto, a prioridade deve ser resolvida por **ordem alfabética (lexicográfica crescente)** do `accountId`.
+* **Retorno:**
+  * `List<String>`: Lista contendo os identificadores formatados no padrão `["accountId1(totalSpent1)", "accountId2(totalSpent2)"]`. Se existirem menos de $K$ contas com gastos, retorna todas as contas que registraram algum gasto.
+
+---
+
+### 📝 Exemplo Prático (Nível 2)
+
+**Entrada (Operações):**
+
+```
+CREATE A
+CREATE B
+CREATE C
+DEPOSIT A 500
+DEPOSIT B 500
+DEPOSIT C 500
+PAYMENT A 100 1000000
+TRANSFER A B 150
+PAYMENT B 250 1000005
+PAYMENT C 250 1000010
+TOP_SPENDERS 2
+```
+
+
+**Saída esperada:**
+```
+true
+true
+true
+500
+500
+500
+true
+true
+true
+true
+["A(250)", "B(250)"]
+```
+*(Nota: 'A' e 'B' empataram com 250 acumulados em gastos. Pela regra de desempate alfabético, 'A' precede 'B'. C também gastou 250, mas como K=2, apenas as 2 primeiras entram na lista).*
+
+---
+
+# 📐 Estratégia de Desenvolvimento (Nível 2)
+
+### Etapa 5 — Pagamentos Temporais
+Implementar a assinatura:
+```java
+boolean payment(String accountId, int amount, long timestamp);
+```
+
+* **Pergunta de design:** Como o `PAYMENT` afeta a entidade `model.Account` em termos de modelo de dados e encapsulamento?
+* **Decisão:** _A preencher após análise._
+* **Justificativa:** _A preencher após análise._
+
+---
+
+### Etapa 6 — Ranking dos Mais Gastadores (Top K)
+Implementar a assinatura:
+```java
+List<String> topSpenders(int k);
+```
+
+* **Pergunta de design:** Qual estrutura de dados e abordagem algorítmica devemos utilizar para obter as top $K$ contas com maior volume de gastos sem ordenar desnecessariamente todas as contas do sistema em $O(N \log N)$?
+* **Decisão:** _A preencher após análise (ex: PriorityQueue / Min-Heap de tamanho K vs Ordenação On-demand vs Manutenção de TreeSet).*
+* **Justificativa:** _A preencher após análise._
+
+---
+
+# 🧠 Aprendizados & Anotações — Nível 2
+
+| Tópico | Anotações / Reflexões |
+| :----- | :-------------------- |
+| **Estruturas de Dados** | _A preencher após implementação (detalhar uso de PriorityQueue / Min-Heap / Comparatores Customizados)._ |
+| **Complexidade** | **`payment()`**: tempo **O(1)** esperado e espaço **O(1)**.<br>**`topSpenders(k)`**: tempo **O(N log K)** utilizando Min-Heap de tamanho $K$ (onde $N$ é o número de contas com gastos no sistema). Espaço adicional **O(K)** para a fila de prioridades. |
+| **Decisões de Design** | _A preencher após implementação (como rastrear o atributo `totalSpent` dentro da entidade `Account` sem violar o encapsulamento)._ |
+| **Comparatores e Empates** | A regra de desempate exige a criação de um `Comparator` customizado no Java. Para um Min-Heap de tamanho $K$, o elemento no topo (raiz) deve ser o **pior candidato a entrar no Top K**. Portanto, em caso de empate no valor gasto, o valor lexicograficamente **maior** (ex: "B" > "A") é considerado "pior" e fica no topo da heap para ser removido primeiro se surgir um candidato melhor. |
+| **Tratamento de Erros e Borda**| - O parâmetro $K$ pode ser maior do que o número total de contas ativas com gastos no sistema.<br>- Contas com gasto igual a `0` não devem poluir a lista do `TOP_SPENDERS`.<br>- Parâmetros inválidos como `amount <= 0` ou `k <= 0` devem ser devidamente tratados. |
 
 > *Nota: Novos requisitos serão adicionados apenas após a finalização do nível atual.*
