@@ -157,7 +157,33 @@ int balance(String accountId);
 
 ---
 
-# 🚀 Evolução Futura
+
+
+# 🟡 Nível 2 — Agregadores, Histórico e Métricas (Top K)
+
+## Contexto
+
+Com o núcleo do sistema operacional, precisamos adicionar inteligência financeira à plataforma. O sistema agora deve suportar transações temporais com `PAYMENT` e ser capaz de extrair relatórios de alto desempenho sobre o comportamento dos usuários através da consulta `TOP_SPENDERS`.
+
+---
+
+## 🛠️ Especificação de Novos Comandos
+
+### 1. `PAYMENT`
+* **Sintaxe:** `PAYMENT <accountId> <amount> <timestamp>`
+* **Descrição:** Executa um pagamento a partir da conta informada no instante de tempo especificado. O valor é debitado permanentemente da conta e contabilizado no total gasto (*total spent*) do usuário.
+* **Retorno:**
+  * `true`: Pagamento realizado com sucesso (conta existe e possui saldo suficiente).
+  * `false`: Falha na operação (conta inexistente ou saldo insuficiente).
+
+### 2. `TOP_SPENDERS`
+* **Sintaxe:** `TOP_SPENDERS <k>`
+* **Descrição:** Retorna a lista dos $K$ usuários que mais gastaram recursos no sistema (soma de todas as operações de `PAYMENT` e `TRANSFER` enviadas com sucesso).
+* **Regra de Desempate:** Se duas ou mais contas possuírem exatamente o mesmo total gasto, a prioridade deve ser resolvida por **ordem alfabética (lexicográfica crescente)** do `accountId`.
+* **Retorno:**
+  * `List<String>`: Lista contendo os identificadores formatados no padrão `["accountId1(totalSpent1)", "accountId2(totalSpent2)"]`. Se existirem menos de $K$ contas com gastos, retorna todas as contas que registraram algum gasto.
+
+---
 
 # 🟡 Nível 2 — Agregadores, Histórico e Métricas (Top K)
 
@@ -231,8 +257,8 @@ boolean payment(String accountId, int amount, long timestamp);
 ```
 
 * **Pergunta de design:** Como o `PAYMENT` afeta a entidade `model.Account` em termos de modelo de dados e encapsulamento?
-* **Decisão:** _A preencher após análise._
-* **Justificativa:** _A preencher após análise._
+* **Decisão:** Reuso do método `withdraw(amount)` existente na classe `Account`. O método `payment` valida as entradas no serviço e delega a alteração de saldo e incremento de `totalSpent` diretamente para a própria conta.
+* **Justificativa:** Garantir o encapsulamento do modelo. Centralizar a lógica de débito em `withdraw(amount)` evita duplicação de regras de validação (saldo suficiente, montante positivo) e assegura que tanto transferências quanto pagamentos atualizem a métrica `totalSpent` de maneira uniforme e atômica.
 
 ---
 
@@ -243,8 +269,8 @@ List<String> topSpenders(int k);
 ```
 
 * **Pergunta de design:** Qual estrutura de dados e abordagem algorítmica devemos utilizar para obter as top $K$ contas com maior volume de gastos sem ordenar desnecessariamente todas as contas do sistema em $O(N \log N)$?
-* **Decisão:** _A preencher após análise (ex: PriorityQueue / Min-Heap de tamanho K vs Ordenação On-demand vs Manutenção de TreeSet).*
-* **Justificativa:** _A preencher após análise._
+* **Decisão:** Utilização de uma Min-Heap (`PriorityQueue`) com capacidade limitada a $K$ elementos associada a um `Comparator` estático privado (`MIN_HEAP_SPENDER_COMPARATOR`).
+* **Justificativa:** A Min-Heap fixada em $K$ elementos reduz a complexidade temporal para $O(N \log K)$ e a espacial para $O(K)$, pois descarta instantaneamente em tempo $O(\log K)$ qualquer candidato inferior ao topo. Isolar o comparador em um membro `private static final` evita alocações redundantes de objetos a cada execução e melhora a legibilidade e o reúso de memória.
 
 ---
 
@@ -252,10 +278,10 @@ List<String> topSpenders(int k);
 
 | Tópico | Anotações / Reflexões |
 | :----- | :-------------------- |
-| **Estruturas de Dados** | _A preencher após implementação (detalhar uso de PriorityQueue / Min-Heap / Comparatores Customizados)._ |
-| **Complexidade** | **`payment()`**: tempo **O(1)** esperado e espaço **O(1)**.<br>**`topSpenders(k)`**: tempo **O(N log K)** utilizando Min-Heap de tamanho $K$ (onde $N$ é o número de contas com gastos no sistema). Espaço adicional **O(K)** para a fila de prioridades. |
-| **Decisões de Design** | _A preencher após implementação (como rastrear o atributo `totalSpent` dentro da entidade `Account` sem violar o encapsulamento)._ |
-| **Comparatores e Empates** | A regra de desempate exige a criação de um `Comparator` customizado no Java. Para um Min-Heap de tamanho $K$, o elemento no topo (raiz) deve ser o **pior candidato a entrar no Top K**. Portanto, em caso de empate no valor gasto, o valor lexicograficamente **maior** (ex: "B" > "A") é considerado "pior" e fica no topo da heap para ser removido primeiro se surgir um candidato melhor. |
-| **Tratamento de Erros e Borda**| - O parâmetro $K$ pode ser maior do que o número total de contas ativas com gastos no sistema.<br>- Contas com gasto igual a `0` não devem poluir a lista do `TOP_SPENDERS`.<br>- Parâmetros inválidos como `amount <= 0` ou `k <= 0` devem ser devidamente tratados. |
+| **Estruturas de Dados** | Utilização de `PriorityQueue` (Min-Heap) de tamanho máximo $K$. A raiz da heap guarda o "pior" candidato do Top K atual, permitindo descarte eficiente com `.poll()`. |
+| **Complexidade** | **`payment()`**: tempo **$O(1)$** e espaço **$O(1)$**.<br>**`topSpenders(k)`**: tempo **$O(N \log K)$** (onde $N$ é o total de contas com `totalSpent > 0`) e espaço adicional **$O(K)$** para a `PriorityQueue`. |
+| **Decisões de Design** | - Extração do `Comparator` para a constante `MIN_HEAP_SPENDER_COMPARATOR` (`private static final`), melhorando performance e mantendo o método limpo.<br>- Manutenção do atributo `totalSpent` encapsulado na entidade `Account`, sendo atualizado automaticamente a cada chamada de `withdraw()`. |
+| **Comparatores e Empates** | Para a Min-Heap de tamanho $K$, o pior elemento fica na raiz para ser removido se a fila exceder tamanho $K$. Por isso, no desempate de valor gasto igual, a conta com ID lexicograficamente **maior** (ex: `"B" > "A"`) é considerada "pior" na Heap (`a2.getId().compareTo(a1.getId())`). Após a descarregada da Heap e a chamada a `Collections.reverse()`, a ordem alfabética crescente final (`"A"`, `"B"`) é restaurada. |
+| **Tratamento de Erros e Borda**| - Verificação para $K \le 0$ retornando `Collections.emptyList()`.<br>- Filtro para ignorar contas com `totalSpent <= 0`.<br>- Suporte transparente para quando $K$ for maior do que o total de contas elegíveis com gastos registrados. |
 
 > *Nota: Novos requisitos serão adicionados apenas após a finalização do nível atual.*

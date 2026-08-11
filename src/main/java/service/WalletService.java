@@ -2,13 +2,11 @@ package service;
 
 import model.Account;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class WalletService {
 
     private final Map<String, Account> accounts = new HashMap<>();
-    private static final String SEPARATOR = "--------------------------------------";
 
     /**
      * Creates a new account.
@@ -101,5 +99,51 @@ public class WalletService {
         }
         return account.withdraw(amount);
     }
+
+    /**
+     * Comparator para a Min-Heap do Top K.
+     * O "pior" candidato do Top K fica na raiz (topo):
+     * 1. Menor gasto total (totalSpent).
+     * 2. Em caso de empate, o ID lexicograficamente MAIOR (ex: "B" e "A" -> "B" fica no topo).
+     */
+    private static final Comparator<Account> MIN_HEAP_SPENDER_COMPARATOR = (a1, a2) -> {
+        if (a1.getTotalSpent() != a2.getTotalSpent()) {
+            return Integer.compare(a1.getTotalSpent(), a2.getTotalSpent());
+        }
+        return a2.getId().compareTo(a1.getId());
+    };
+
+    public List<String> topSpenders(int k) {
+        if (k <= 0) {
+            return Collections.emptyList();
+        }
+
+        PriorityQueue<Account> minHeap = new PriorityQueue<>(MIN_HEAP_SPENDER_COMPARATOR);
+
+        for (Account account : accounts.values()) {
+            if (account.getTotalSpent() <= 0) {
+                continue;
+            }
+
+            minHeap.offer(account);
+
+            if (minHeap.size() > k) {
+                minHeap.poll();
+            }
+        }
+
+        List<Account> result = new ArrayList<>();
+        while (!minHeap.isEmpty()) {
+            result.add(minHeap.poll());
+        }
+
+        Collections.reverse(result);
+
+        return result.stream()
+                .map(acc -> acc.getId() + "(" + acc.getTotalSpent() + ")")
+                .toList();
+    }
+
+
 
 }
