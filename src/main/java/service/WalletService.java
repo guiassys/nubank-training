@@ -6,7 +6,7 @@ import model.Transaction;
 
 import java.util.*;
 
-public class WalletService {
+public class WalletService implements IWalletService {
 
     private final Map<String, Account> accounts = new HashMap<>();
 

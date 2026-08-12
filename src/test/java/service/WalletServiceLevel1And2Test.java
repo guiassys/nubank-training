@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class WalletServiceLevel1And2Test {
 
-    private WalletService walletService;
+    private IWalletService walletService;
 
     @BeforeEach
     void setUp() {

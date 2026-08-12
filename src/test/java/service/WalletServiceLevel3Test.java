@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class WalletServiceLevel3Test {
 
-    private WalletService walletService;
+    private IWalletService walletService;
 
     @BeforeEach
     void setUp() {
