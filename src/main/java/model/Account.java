@@ -81,11 +81,11 @@ public class Account {
 
         // Se houver registro desse timestamp no histórico, ajustamos também
         if (spendingHistory.containsKey(timestamp)) {
-            int currentAtTimestamp = spendingHistory.get(timestamp);
-            if (currentAtTimestamp <= amount) {
+            int recordedAmountAtTimestamp = spendingHistory.get(timestamp);
+            if (recordedAmountAtTimestamp <= amount) {
                 spendingHistory.remove(timestamp);
             } else {
-                spendingHistory.put(timestamp, currentAtTimestamp - amount);
+                spendingHistory.put(timestamp, recordedAmountAtTimestamp - amount);
             }
         }
     }
