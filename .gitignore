@@ -36,3 +36,5 @@ replay_pid*
 # OS generated files
 .DS_Store
 Thumbs.db
+/.github/docker/env/.env.dev
+/.github/docker/env/.env.test

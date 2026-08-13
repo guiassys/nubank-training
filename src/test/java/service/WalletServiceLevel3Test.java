@@ -1,5 +1,6 @@
 package service;
 
+import exceptions.TransactionNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -8,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class WalletServiceLevel3Test {
 
-    private WalletService walletService;
+    private IWalletService walletService; // Mantemos IWalletService para acesso a create, deposit, etc.
 
     @BeforeEach
     void setUp() {
@@ -59,8 +60,11 @@ class WalletServiceLevel3Test {
         assertEquals(700, walletService.balance("A"));
         assertEquals("A(300)", walletService.topSpenders(1).getFirst());
 
-        // Não deve permitir reembolso duplicado da mesma transação
-        assertFalse(walletService.refund("A", txId, 4000L));
+        // Não deve permitir reembolso duplicado da mesma transação (lança exceção)
+        assertThrows(
+                TransactionNotFoundException.class,
+                () -> walletService.refund("A", txId, 4000L)
+        );
     }
 
     @Test
