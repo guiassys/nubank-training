@@ -103,6 +103,7 @@ jobs:
           echo "📥 Starting SonarQube analysis for nubank-training-${TARGET_ENV}..."
 
           docker run --rm \
+            --network "apex-network-${TARGET_ENV}" \
             -v "${{ github.workspace }}:/usr/src" \
             sonarsource/sonar-scanner-cli:latest \
             -Dsonar.projectKey="nubank-training-${TARGET_ENV}" \
