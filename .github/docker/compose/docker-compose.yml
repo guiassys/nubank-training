@@ -1,0 +1,10 @@
+services:
+  nubank-training:
+    build:
+      context: ../../../
+      dockerfile: Dockerfile
+    image: nubank-training:${ENV_NAME}
+    container_name: nubank-training-${ENV_NAME}
+    restart: "no"
+    env_file:
+      - ../env/.env.${ENV_NAME}
