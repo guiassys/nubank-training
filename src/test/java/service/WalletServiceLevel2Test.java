@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class WalletServiceLevel2Test {
 
-    private IWalletService walletService;
+    private IWalletService walletService; // Mantemos IWalletService para acesso a create, deposit, etc.
 
     @BeforeEach
     void setUp() {

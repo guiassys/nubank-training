@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class WalletServiceLevel3Test {
 
-    private IWalletService walletService;
+    private IWalletService walletService; // Mantemos IWalletService para acesso a create, deposit, etc.
 
     @BeforeEach
     void setUp() {

@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class WalletServiceLevel1Test {
 
-    private IWalletService walletService;
+    private IWalletService walletService; // Mantemos IWalletService aqui por simplicidade, pois os testes misturam admin e financeiro
 
     @BeforeEach
     void setUp() {
@@ -97,7 +97,7 @@ class WalletServiceLevel1Test {
     }
 
     @Test
-    void shouldNotTransferWhenBalanceIsInsufficient() {
+    void shouldNotTransferWhenBalanceIsSufficient() {
         // Arrange
         walletService.create("A");
         walletService.create("B");
