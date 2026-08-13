@@ -30,20 +30,25 @@ public class WalletService implements IWalletService {
      * Processa todos os cashbacks pendentes que maturaram até o timestamp atual.
      */
     private void processPendingCashbacks(long currentTimestamp) {
-        while (!cashbackQueue.isEmpty() && cashbackQueue.peek().getMaturityTimestamp() <= currentTimestamp) {
-            CashbackEvent event = cashbackQueue.poll();
+        synchronized (cashbackQueue) {
+            while (!cashbackQueue.isEmpty() && cashbackQueue.peek().getMaturityTimestamp() <= currentTimestamp) {
+                CashbackEvent event = cashbackQueue.poll();
+                if (event == null) {
+                    break;
+                }
 
-            // Remove do mapa de pendentes
-            pendingCashbacks.remove(event.getTransactionId());
+                // Remove do mapa de pendentes
+                pendingCashbacks.remove(event.getTransactionId());
 
-            // Se o cashback foi cancelado (via REFUND), apenas descarta
-            if (event.isCancelled()) {
-                continue;
-            }
+                // Se o cashback foi cancelado (via REFUND), apenas descarta
+                if (event.isCancelled()) {
+                    continue;
+                }
 
-            Account account = accounts.get(event.getAccountId());
-            if (account != null && event.getAmount() > 0) {
-                account.deposit(event.getAmount());
+                Account account = accounts.get(event.getAccountId());
+                if (account != null && event.getAmount() > 0) {
+                    account.deposit(event.getAmount());
+                }
             }
         }
     }
@@ -105,12 +110,12 @@ public class WalletService implements IWalletService {
      * NÍVEL 3 — Consulta o saldo processando eventos temporais (cashbacks)
      * pendentes que maturaram até o timestamp informado.
      */
-    public synchronized int balance(String accountId, long timestamp) {
+    public int balance(String accountId, long timestamp) {
         processPendingCashbacks(timestamp);
         return balance(accountId);
     }
 
-    public synchronized boolean payment(String accountId, int amount, long timestamp) {
+    public boolean payment(String accountId, int amount, long timestamp) {
         processPendingCashbacks(timestamp);
 
         if (amount <= 0) {
@@ -126,7 +131,7 @@ public class WalletService implements IWalletService {
      * NÍVEL 3 — PAYMENT WITH CASHBACK
      * Realiza um pagamento e agenda o crédito do cashback para timestamp + 24 horas.
      */
-    public synchronized String paymentWithCashback(String accountId, int amount, long timestamp, int cashbackPercent) {
+    public String paymentWithCashback(String accountId, int amount, long timestamp, int cashbackPercent) {
         processPendingCashbacks(timestamp);
 
         if (amount <= 0) {
@@ -161,7 +166,7 @@ public class WalletService implements IWalletService {
      * NÍVEL 3 — REFUND
      * Estorna um pagamento feito anteriormente e cancela o cashback agendado (caso ainda não tenha sido pago).
      */
-    public synchronized boolean refund(String accountId, String transactionId, long timestamp) {
+    public boolean refund(String accountId, String transactionId, long timestamp) {
         processPendingCashbacks(timestamp);
 
         Transaction transaction = transactions.get(transactionId);
@@ -190,7 +195,7 @@ public class WalletService implements IWalletService {
      * NÍVEL 3 — SPENT IN WINDOW
      * Retorna o total gasto em pagamentos e transferências na janela [currentTimestamp - windowSizeMs, currentTimestamp].
      */
-    public synchronized int spentInWindow(String accountId, long windowSizeMs, long currentTimestamp) {
+    public int spentInWindow(String accountId, long windowSizeMs, long currentTimestamp) {
         processPendingCashbacks(currentTimestamp);
 
         if (windowSizeMs < 0) {
