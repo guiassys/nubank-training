@@ -1,5 +1,9 @@
 package service;
 
+import exceptions.AccountAlreadyExistsException;
+import exceptions.AccountNotFoundException;
+import exceptions.InsufficientBalanceException;
+import exceptions.InvalidAmountException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -29,11 +33,12 @@ class WalletServiceLevel1Test {
         // Arrange
         walletService.create("A");
 
-        // Act
-        boolean result = walletService.create("A");
+        // Act & Assert
+        assertThrows(
+                AccountAlreadyExistsException.class,
+                () -> walletService.create("A")
+        );
 
-        // Assert
-        assertFalse(result);
         assertEquals(0, walletService.balance("A"));
     }
 
@@ -52,12 +57,11 @@ class WalletServiceLevel1Test {
 
     @Test
     void shouldReturnMinusOneWhenDepositingIntoInexistentAccount() {
-        // Act
-        int result = walletService.deposit("X", 100);
-
-        // Assert
-        assertEquals(-1, result);
-        assertEquals(-1, walletService.balance("X"));
+        // Act & Assert
+        assertThrows(
+                AccountNotFoundException.class,
+                () -> walletService.deposit("X", 100)
+        );
     }
 
     @Test
@@ -103,11 +107,11 @@ class WalletServiceLevel1Test {
         walletService.create("B");
         walletService.deposit("A", 100);
 
-        // Act
-        boolean result = walletService.transfer("A", "B", 150);
-
-        // Assert
-        assertFalse(result);
+        // Act & Assert
+        assertThrows(
+                InsufficientBalanceException.class,
+                () -> walletService.transfer("A", "B", 150)
+        );
 
         // Estado não deve ser alterado
         assertEquals(100, walletService.balance("A"));
@@ -120,11 +124,11 @@ class WalletServiceLevel1Test {
         walletService.create("A");
         walletService.deposit("A", 100);
 
-        // Act
-        boolean result = walletService.transfer("A", "A", 10);
-
-        // Assert
-        assertFalse(result);
+        // Act & Assert
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> walletService.transfer("A", "A", 10)
+        );
 
         // Estado não deve ser alterado
         assertEquals(100, walletService.balance("A"));
@@ -136,15 +140,14 @@ class WalletServiceLevel1Test {
         walletService.create("A");
         walletService.deposit("A", 100);
 
-        // Act
-        boolean result = walletService.transfer("A", "X", 10);
-
-        // Assert
-        assertFalse(result);
+        // Act & Assert
+        assertThrows(
+                AccountNotFoundException.class,
+                () -> walletService.transfer("A", "X", 10)
+        );
 
         // Estado não deve ser alterado
         assertEquals(100, walletService.balance("A"));
-        assertEquals(-1, walletService.balance("X"));
     }
 
     @Test
@@ -152,26 +155,22 @@ class WalletServiceLevel1Test {
         // Arrange
         walletService.create("B");
 
-        // Act
-        boolean result = walletService.transfer("X", "B", 10);
+        // Act & Assert
+        assertThrows(
+                AccountNotFoundException.class,
+                () -> walletService.transfer("X", "B", 10)
+        );
 
-        // Assert
-        assertFalse(result);
-
-        assertEquals(-1, walletService.balance("X"));
         assertEquals(0, walletService.balance("B"));
     }
 
     @Test
     void shouldNotTransferWhenBothAccountsDoNotExist() {
-        // Act
-        boolean result = walletService.transfer("X", "Y", 10);
-
-        // Assert
-        assertFalse(result);
-
-        assertEquals(-1, walletService.balance("X"));
-        assertEquals(-1, walletService.balance("Y"));
+        // Act & Assert
+        assertThrows(
+                AccountNotFoundException.class,
+                () -> walletService.transfer("X", "Y", 10)
+        );
     }
 
     @Test
@@ -181,11 +180,11 @@ class WalletServiceLevel1Test {
         walletService.create("B");
         walletService.deposit("A", 100);
 
-        // Act
-        boolean result = walletService.transfer("A", "B", 0);
-
-        // Assert
-        assertFalse(result);
+        // Act & Assert
+        assertThrows(
+                InvalidAmountException.class,
+                () -> walletService.transfer("A", "B", 0)
+        );
 
         // Estado não deve ser alterado
         assertEquals(100, walletService.balance("A"));
@@ -199,11 +198,11 @@ class WalletServiceLevel1Test {
         walletService.create("B");
         walletService.deposit("A", 100);
 
-        // Act
-        boolean result = walletService.transfer("A", "B", -10);
-
-        // Assert
-        assertFalse(result);
+        // Act & Assert
+        assertThrows(
+                InvalidAmountException.class,
+                () -> walletService.transfer("A", "B", -10)
+        );
 
         // Estado não deve ser alterado
         assertEquals(100, walletService.balance("A"));
@@ -225,10 +224,10 @@ class WalletServiceLevel1Test {
 
     @Test
     void shouldReturnMinusOneWhenAccountDoesNotExist() {
-        // Act
-        int result = walletService.balance("X");
-
-        // Assert
-        assertEquals(-1, result);
+        // Act & Assert
+        assertThrows(
+                AccountNotFoundException.class,
+                () -> walletService.balance("X")
+        );
     }
 }
