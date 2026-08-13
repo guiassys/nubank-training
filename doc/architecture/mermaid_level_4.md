@@ -39,12 +39,12 @@ flowchart TD
     Start([Início: setDailyLimit accountId, limit]) --> GetAccount["Busca a conta\ngetAccountById(accountId)"]
     
     GetAccount --> CheckAccount{Conta existe?}
-    CheckAccount -- Não --> ReturnFalse[Retorna false]
+    CheckAccount -- Não --> ThrowNotFound[Lança AccountNotFoundException]
     
     CheckAccount -- Sim --> SetLimit["Chama account.setDailyLimit(limit)"]
     SetLimit --> ReturnTrue[Retorna true]
 
-    ReturnFalse --> End([Fim])
+    ThrowNotFound --> End([Fim])
     ReturnTrue --> End
 ```
 ---
@@ -55,15 +55,16 @@ flowchart TD
     Start([Início: unblock accountId]) --> GetAccount["Busca a conta\ngetAccountById(accountId)"]
     
     GetAccount --> CheckAccount{Conta existe?}
-    CheckAccount -- Não --> ReturnFalse[Retorna false]
+    CheckAccount -- Não --> ThrowNotFound[Lança AccountNotFoundException]
     
     CheckAccount -- Sim --> IsLocked{Conta está bloqueada?}
-    IsLocked -- Não --> ReturnFalse
+    IsLocked -- Não --> ReturnFalse[Retorna false]
     
     IsLocked -- Sim --> UnlockAccount["Chama account.unlock()"]
     UnlockAccount --> ReturnTrue[Retorna true]
 
-    ReturnFalse --> End([Fim])
+    ThrowNotFound --> End([Fim])
+    ReturnFalse --> End
     ReturnTrue --> End
 ```
 ---
@@ -72,11 +73,11 @@ flowchart TD
 ```mermaid
 flowchart TD
     Start([Início: transfer from, to, amount]) --> ValidateInput{from == to OU amount <= 0?}
-    ValidateInput -- Sim --> ReturnFalse[Retorna false]
+    ValidateInput -- Sim --> ThrowException[Lança Exception]
 
     ValidateInput -- Não --> GetAccounts[Busca contas de origem e destino]
     GetAccounts --> CheckAccounts{Ambas existem?}
-    CheckAccounts -- Não --> ReturnFalse
+    CheckAccounts -- Não --> ThrowNotFound[Lança AccountNotFoundException]
 
     CheckAccounts -- Sim --> DetermineLockOrder["Determina a ordem de bloqueio\n(pelo ID da conta)"]
     DetermineLockOrder --> AcquireLock1["synchronized(lock1)"]
@@ -84,12 +85,14 @@ flowchart TD
     
     AcquireLock2 --> Withdraw["Chama fromAccount.withdraw(amount)"]
     Withdraw --> CheckWithdraw{Saque bem-sucedido?}
-    CheckWithdraw -- Não --> ReleaseLocks["Libera bloqueios"] --> ReturnFalse
+    CheckWithdraw -- Não --> ThrowInsufficientBalance[Lança InsufficientBalanceException]
     
     CheckWithdraw -- Sim --> Deposit["Chama toAccount.deposit(amount)"]
-    Deposit --> ReleaseLocks
+    Deposit --> ReleaseLocks["Libera bloqueios"]
     ReleaseLocks --> ReturnTrue[Retorna true]
 
-    ReturnFalse --> End([Fim])
+    ThrowException --> End([Fim])
+    ThrowNotFound --> End
+    ThrowInsufficientBalance --> End
     ReturnTrue --> End
 ```
