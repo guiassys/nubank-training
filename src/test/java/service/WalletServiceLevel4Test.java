@@ -1,0 +1,133 @@
+package service;
+
+import model.Account;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class WalletServiceLevel4Test {
+
+    private IWalletService walletService;
+
+    @BeforeEach
+    void setUp() {
+        walletService = new WalletService();
+        walletService.create("A");
+        walletService.create("B");
+        walletService.deposit("A", 10000); // Saldo alto para testes de concorrência
+        walletService.deposit("B", 10000);
+    }
+
+    @Test
+    @DisplayName("Nível 4 - Concorrência: Deve manter a consistência do saldo sob transferências concorrentes")
+    void shouldMaintainBalanceConsistencyUnderConcurrentTransfers() throws InterruptedException {
+        int initialBalanceA = walletService.balance("A");
+        int initialBalanceB = walletService.balance("B");
+        int transferAmount = 1;
+        int numThreads = 100;
+        int numTransfersPerThread = 10;
+
+        ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+
+        // 100 threads transferem de A para B
+        for (int i = 0; i < numThreads; i++) {
+            executor.submit(() -> {
+                for (int j = 0; j < numTransfersPerThread; j++) {
+                    walletService.transfer("A", "B", transferAmount);
+                }
+            });
+        }
+
+        // 100 threads transferem de B para A
+        for (int i = 0; i < numThreads; i++) {
+            executor.submit(() -> {
+                for (int j = 0; j < numTransfersPerThread; j++) {
+                    walletService.transfer("B", "A", transferAmount);
+                }
+            });
+        }
+
+        executor.shutdown();
+        assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS), "Os testes de concorrência excederam o tempo limite.");
+
+        // Como o número de transferências de A->B é igual a B->A, os saldos finais devem ser iguais aos iniciais.
+        assertEquals(initialBalanceA, walletService.balance("A"));
+        assertEquals(initialBalanceB, walletService.balance("B"));
+    }
+
+    @Test
+    @DisplayName("Nível 4 - Fraude: Deve bloquear a conta após 3 transações de débito em menos de 2 minutos")
+    void shouldLockAccountAfter3DebitTransactionsInUnder2Minutes() {
+        long baseTimestamp = 1000000L;
+
+        // 3 transações dentro da janela de 2 minutos
+        assertTrue(walletService.payment("A", 10, baseTimestamp + 10000));
+        assertTrue(walletService.payment("A", 10, baseTimestamp + 60000));
+        assertTrue(walletService.payment("A", 10, baseTimestamp + 110000));
+
+        // A 4ª transação deve falhar e a conta deve ser bloqueada
+        assertFalse(walletService.payment("A", 10, baseTimestamp + 115000));
+
+        Account accountA = walletService.getAccountById("A");
+        assertTrue(accountA.isLocked());
+
+        // Depósitos ainda devem funcionar. Saldo: 10000 - 30 (pagamentos) + 100 (depósito) = 10070
+        assertEquals(10070, walletService.deposit("A", 100));
+    }
+
+    @Test
+    @DisplayName("Nível 4 - Fraude: Deve desbloquear a conta com o comando UNBLOCK")
+    void shouldUnlockAccountWithUnblockCommand() {
+        long baseTimestamp = 2000000L;
+        // Força o bloqueio da conta
+        walletService.payment("A", 1, baseTimestamp + 1000);
+        walletService.payment("A", 1, baseTimestamp + 2000);
+        walletService.payment("A", 1, baseTimestamp + 3000);
+        assertFalse(walletService.payment("A", 1, baseTimestamp + 4000)); // Bloqueada
+
+        assertTrue(walletService.getAccountById("A").isLocked());
+
+        // Tenta desbloquear
+        assertTrue(walletService.unblock("A"));
+        assertFalse(walletService.getAccountById("A").isLocked());
+
+        // A conta agora deve aceitar um novo pagamento. Saldo: 10000 - 3 (pagamentos) - 10 (novo pagamento) = 9987
+        assertTrue(walletService.payment("A", 10, baseTimestamp + 5000));
+        assertEquals(9987, walletService.balance("A"));
+    }
+
+    @Test
+    @DisplayName("Nível 4 - Limite Diário: Deve respeitar o limite de gasto diário")
+    void shouldRespectDailySpendingLimit() {
+        long day1 = 500000L;
+        long day2 = day1 + 86400000L;
+
+        // Define o limite diário para 100
+        assertTrue(walletService.setDailyLimit("A", 100));
+
+        // Gasta 80 no dia 1 - OK
+        assertTrue(walletService.payment("A", 80, day1 + 1000));
+        assertEquals(9920, walletService.balance("A"));
+
+        // Tenta gastar mais 30 no dia 1 - Deve falhar (80 + 30 > 100)
+        assertFalse(walletService.payment("A", 30, day1 + 2000));
+        assertEquals(9920, walletService.balance("A")); // Saldo não deve mudar
+
+        // Tenta gastar 20 no dia 1 - OK (80 + 20 <= 100)
+        assertTrue(walletService.payment("A", 20, day1 + 3000));
+        assertEquals(9900, walletService.balance("A"));
+
+        // Tenta gastar mais 1 no dia 1 - Deve falhar (100 + 1 > 100)
+        assertFalse(walletService.payment("A", 1, day1 + 4000));
+
+        // Gasta 50 no dia 2 - OK, pois o limite é por dia
+        assertTrue(walletService.payment("A", 50, day2 + 1000));
+        assertEquals(9850, walletService.balance("A"));
+    }
+}

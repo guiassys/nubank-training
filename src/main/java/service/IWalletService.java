@@ -27,4 +27,8 @@ public interface IWalletService {
     int spentInWindow(String accountId, long windowSizeMs, long currentTimestamp);
 
     List<String> topSpenders(int k);
+
+    boolean unblock(String accountId);
+
+    boolean setDailyLimit(String accountId, int limit);
 }

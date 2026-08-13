@@ -5,19 +5,21 @@ import model.CashbackEvent;
 import model.Transaction;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.PriorityBlockingQueue;
 
 public class WalletService implements IWalletService {
 
-    private final Map<String, Account> accounts = new HashMap<>();
+    private final Map<String, Account> accounts = new ConcurrentHashMap<>();
 
     // Mapeamento idTransacao -> Objeto Transaction para permitir o REFUND
-    private final Map<String, Transaction> transactions = new HashMap<>();
+    private final Map<String, Transaction> transactions = new ConcurrentHashMap<>();
 
     // Fila de prioridade de cashbacks ordenados pelo tempo de maturação (maturityTimestamp)
-    private final PriorityQueue<CashbackEvent> cashbackQueue = new PriorityQueue<>();
+    private final PriorityBlockingQueue<CashbackEvent> cashbackQueue = new PriorityBlockingQueue<>();
 
     // Mapeamento idTransacao -> CashbackEvent para localizar e cancelar rapidamente durante o REFUND
-    private final Map<String, CashbackEvent> pendingCashbacks = new HashMap<>();
+    private final Map<String, CashbackEvent> pendingCashbacks = new ConcurrentHashMap<>();
 
     private int transactionSequence = 0;
     private static final long CASHBACK_DELAY_MS = 86_400_000L; // 24 horas em milissegundos
@@ -45,12 +47,8 @@ public class WalletService implements IWalletService {
     }
 
     public boolean create(String accountId) {
-        if (accounts.containsKey(accountId)) {
-            return false;
-        }
-        Account account = new Account(accountId);
-        accounts.put(accountId, account);
-        return true;
+        // A operação putIfAbsent do ConcurrentHashMap é atômica.
+        return accounts.putIfAbsent(accountId, new Account(accountId)) == null;
     }
 
     public Account getAccountById(String accountId) {
@@ -67,6 +65,10 @@ public class WalletService implements IWalletService {
     }
 
     public boolean transfer(String from, String to, int amount) {
+        if (from.equals(to) || amount <= 0) {
+            return false;
+        }
+
         Account fromAccount = getAccountById(from);
         Account toAccount = getAccountById(to);
 
@@ -74,15 +76,19 @@ public class WalletService implements IWalletService {
             return false;
         }
 
-        if (from.equals(to) || amount <= 0) {
-            return false;
-        }
+        // Para evitar deadlocks, travamos as contas em uma ordem consistente (pelo ID).
+        Object lock1 = from.compareTo(to) < 0 ? fromAccount : toAccount;
+        Object lock2 = from.compareTo(to) < 0 ? toAccount : fromAccount;
 
-        if (!fromAccount.withdraw(amount)) {
-            return false;
+        synchronized (lock1) {
+            synchronized (lock2) {
+                // A lógica de saque agora verifica o status de bloqueio e limite diário internamente
+                if (!fromAccount.withdraw(amount)) {
+                    return false;
+                }
+                toAccount.deposit(amount);
+            }
         }
-
-        toAccount.deposit(amount);
         return true;
     }
 
@@ -98,12 +104,12 @@ public class WalletService implements IWalletService {
      * NÍVEL 3 — Consulta o saldo processando eventos temporais (cashbacks)
      * pendentes que maturaram até o timestamp informado.
      */
-    public int balance(String accountId, long timestamp) {
+    public synchronized int balance(String accountId, long timestamp) {
         processPendingCashbacks(timestamp);
         return balance(accountId);
     }
 
-    public boolean payment(String accountId, int amount, long timestamp) {
+    public synchronized boolean payment(String accountId, int amount, long timestamp) {
         processPendingCashbacks(timestamp);
 
         if (amount <= 0) {
@@ -114,6 +120,7 @@ public class WalletService implements IWalletService {
             return false;
         }
 
+        // A lógica de saque agora verifica o status de bloqueio e limite diário internamente
         return account.withdraw(amount, timestamp);
     }
 
@@ -121,7 +128,7 @@ public class WalletService implements IWalletService {
      * NÍVEL 3 — PAYMENT WITH CASHBACK
      * Realiza um pagamento e agenda o crédito do cashback para timestamp + 24 horas.
      */
-    public String paymentWithCashback(String accountId, int amount, long timestamp, int cashbackPercent) {
+    public synchronized String paymentWithCashback(String accountId, int amount, long timestamp, int cashbackPercent) {
         processPendingCashbacks(timestamp);
 
         if (amount <= 0 || cashbackPercent < 0 || cashbackPercent > 100) {
@@ -133,6 +140,7 @@ public class WalletService implements IWalletService {
             return null;
         }
 
+        // A lógica de saque agora verifica o status de bloqueio e limite diário internamente
         if (!account.withdraw(amount, timestamp)) {
             return null;
         }
@@ -157,7 +165,7 @@ public class WalletService implements IWalletService {
      * NÍVEL 3 — REFUND
      * Estorna um pagamento feito anteriormente e cancela o cashback agendado (caso ainda não tenha sido pago).
      */
-    public boolean refund(String accountId, String transactionId, long timestamp) {
+    public synchronized boolean refund(String accountId, String transactionId, long timestamp) {
         processPendingCashbacks(timestamp);
 
         Transaction transaction = transactions.get(transactionId);
@@ -193,7 +201,7 @@ public class WalletService implements IWalletService {
      * NÍVEL 3 — SPENT IN WINDOW
      * Retorna o total gasto em pagamentos e transferências na janela [currentTimestamp - windowSizeMs, currentTimestamp].
      */
-    public int spentInWindow(String accountId, long windowSizeMs, long currentTimestamp) {
+    public synchronized int spentInWindow(String accountId, long windowSizeMs, long currentTimestamp) {
         processPendingCashbacks(currentTimestamp);
 
         if (windowSizeMs < 0) {
@@ -221,9 +229,12 @@ public class WalletService implements IWalletService {
             return Collections.emptyList();
         }
 
+        // Usar uma cópia para não precisar de sincronização externa durante a iteração
+        Collection<Account> allAccounts = new ArrayList<>(accounts.values());
+
         PriorityQueue<Account> minHeap = new PriorityQueue<>(MIN_HEAP_SPENDER_COMPARATOR);
 
-        for (Account account : accounts.values()) {
+        for (Account account : allAccounts) {
             if (account.getTotalSpent() <= 0) {
                 continue;
             }
@@ -245,5 +256,25 @@ public class WalletService implements IWalletService {
         return result.stream()
                 .map(acc -> acc.getId() + "(" + acc.getTotalSpent() + ")")
                 .toList();
+    }
+
+    @Override
+    public boolean unblock(String accountId) {
+        Account account = getAccountById(accountId);
+        if (account == null || !account.isLocked()) {
+            return false;
+        }
+        account.unlock();
+        return true;
+    }
+
+    @Override
+    public boolean setDailyLimit(String accountId, int limit) {
+        Account account = getAccountById(accountId);
+        if (account == null) {
+            return false;
+        }
+        account.setDailyLimit(limit);
+        return true;
     }
 }
