@@ -7,6 +7,7 @@ import model.Transaction;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class WalletService implements IWalletService {
 
@@ -21,7 +22,7 @@ public class WalletService implements IWalletService {
     // Mapeamento idTransacao -> CashbackEvent para localizar e cancelar rapidamente durante o REFUND
     private final Map<String, CashbackEvent> pendingCashbacks = new ConcurrentHashMap<>();
 
-    private int transactionSequence = 0;
+    private final AtomicInteger transactionSequence = new AtomicInteger(0);
     private static final long CASHBACK_DELAY_MS = 86_400_000L; // 24 horas em milissegundos
 
     /**
@@ -146,7 +147,7 @@ public class WalletService implements IWalletService {
         }
 
         int cashbackAmount = (amount * cashbackPercent) / 100;
-        String transactionId = "TX-" + (++transactionSequence);
+        String transactionId = "TX-" + transactionSequence.incrementAndGet();
 
         Transaction transaction = new Transaction(transactionId, accountId, amount, timestamp, cashbackAmount);
         transactions.put(transactionId, transaction);
