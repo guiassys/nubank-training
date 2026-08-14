@@ -60,3 +60,16 @@ O Nível 3 adiciona mecanismos financeiros avançados, como cashbacks, estornos 
 | `SPENT_IN_WINDOW` | `SPENT_IN_WINDOW <accountId> <windowSizeMs> <currentTimestamp>` | Calcula o total de gastos de uma conta em uma janela de tempo deslizante. |
 
 > Para mais detalhes sobre a implementação, consulte o [Release Notes do Nível 3](./doc/release/LEVEL_3.md).
+
+---
+
+### 🔵 Nível 4 — Concorrência e Robustez
+
+O Nível 4 robustece o sistema para um ambiente de produção, introduzindo **segurança contra concorrência** e preparando o terreno para regras de negócio complexas.
+
+**Melhorias Implementadas:**
+- **Thread Safety** em `model.Account`.
+- **Coleções Concorrentes e Locks Granulares** em `service.WalletService`.
+- **Prevenção de Deadlock** em transferências com *ordered locking*.
+
+> Para mais detalhes sobre a implementação, consulte o [Release Notes do Nível 4](./doc/release/LEVEL_4.md).
