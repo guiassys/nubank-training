@@ -6,7 +6,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>br.com.guillaume.training</groupId>
+    <groupId>br.com.guiassys</groupId>
     <artifactId>nubank-training</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
@@ -19,28 +19,22 @@
     </description>
 
     <properties>
-
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
         <maven.compiler.release>21</maven.compiler.release>
-
         <junit.version>5.13.4</junit.version>
-
+        <jacoco.version>0.8.12</jacoco.version>
     </properties>
 
     <dependencies>
-
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
-
         <plugins>
 
             <plugin>
@@ -64,8 +58,31 @@
                 <version>3.5.3</version>
             </plugin>
 
-        </plugins>
+            <!-- Plugin do JaCoCo para geração do relatório de cobertura de código -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <!-- Prepara o agente java para monitorar os testes -->
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <!-- Gera o relatório XML em target/site/jacoco/jacoco.xml após a fase de testes -->
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
+        </plugins>
     </build>
 
 </project>

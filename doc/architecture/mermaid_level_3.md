@@ -6,15 +6,15 @@ flowchart TD
     Start([Início: paymentWithCashback]) --> ProcessCashbacks("Chama processPendingCashbacks(timestamp)")
     
     ProcessCashbacks --> ValidateInput{amount > 0 E 0 <= percent <= 100?}
-    ValidateInput -- Não --> ReturnNull[Retorna null]
+    ValidateInput -- Não --> ThrowInvalidAmount[Lança InvalidAmountException]
     
-    ValidateInput -- Sim --> GetAccount[Busca a conta]
+    ValidateInput -- Sim --> GetAccount[Busca a conta via getAccountById]
     GetAccount --> CheckAccount{Conta existe?}
-    CheckAccount -- Não --> ReturnNull
+    CheckAccount -- Não --> ThrowNotFound[Lança AccountNotFoundException]
     
     CheckAccount -- Sim --> Withdraw["Tenta sacar da conta\naccount.withdraw(amount, timestamp)"]
     Withdraw --> CheckWithdraw{Saque bem-sucedido?}
-    CheckWithdraw -- Não --> ReturnNull
+    CheckWithdraw -- Não --> ThrowInsufficientBalance[Lança InsufficientBalanceException]
     
     CheckWithdraw -- Sim --> CalcCashback[Calcula valor do cashback]
     CalcCashback --> GenTxId[Gera ID da transação\n'TX-' + ++sequence]
@@ -28,7 +28,9 @@ flowchart TD
     OfferToQueue --> AddToMap["Adiciona evento no mapa 'pendingCashbacks'"]
     AddToMap --> ReturnTxId
     
-    ReturnNull --> End([Fim])
+    ThrowInvalidAmount --> End([Fim])
+    ThrowNotFound --> End
+    ThrowInsufficientBalance --> End
     ReturnTxId --> End
 ```
 ---
@@ -39,15 +41,12 @@ flowchart TD
     Start([Início: refund accountId, txId, timestamp]) --> ProcessCashbacks("Chama processPendingCashbacks(timestamp)")
     
     ProcessCashbacks --> GetTx[Busca a transação pelo txId]
-    GetTx --> CheckTx{Transação existe E não foi reembolsada?}
-    CheckTx -- Não --> ReturnFalse[Retorna false]
+    GetTx --> CheckTx{Tx existe, não foi reembolsada e pertence à conta?}
+    CheckTx -- Não --> ThrowTxNotFound[Lança TransactionNotFoundException]
     
-    CheckTx -- Sim --> CheckAccountMatch{ID da conta na TX == accountId?}
-    CheckAccountMatch -- Não --> ReturnFalse
-    
-    CheckAccountMatch -- Sim --> GetAccount[Busca a conta]
+    CheckTx -- Sim --> GetAccount[Busca a conta via getAccountById]
     GetAccount --> CheckAccountExists{Conta existe?}
-    CheckAccountExists -- Não --> ReturnFalse
+    CheckAccountExists -- Não --> ThrowAccountNotFound[Lança AccountNotFoundException]
     
     CheckAccountExists -- Sim --> MarkRefunded[Marca transação como reembolsada]
     MarkRefunded --> CallRefund["Chama account.refund(amount, timestamp)"]
@@ -59,7 +58,8 @@ flowchart TD
     CheckPending -- Sim --> CancelEvent["Chama pendingEvent.cancel()"]
     CancelEvent --> ReturnTrue
     
-    ReturnFalse --> End([Fim])
+    ThrowTxNotFound --> End([Fim])
+    ThrowAccountNotFound --> End
     ReturnTrue --> End
 ```
 ---
@@ -72,14 +72,15 @@ flowchart TD
     ProcessCashbacks --> ValidateWindow{windowSizeMs >= 0?}
     ValidateWindow -- Não --> ReturnZero[Retorna 0]
     
-    ValidateWindow -- Sim --> GetAccount[Busca a conta]
+    ValidateWindow -- Sim --> GetAccount[Busca a conta via getAccountById]
     GetAccount --> CheckAccount{Conta existe?}
-    CheckAccount -- Não --> ReturnZero
+    CheckAccount -- Não --> ThrowNotFound[Lança AccountNotFoundException]
     
     CheckAccount -- Sim --> CalcStart[Calcula startTimestamp]
     CalcStart --> CallSpentInWindow["Chama account.getSpentInWindow(start, end)"]
     CallSpentInWindow --> End([Retorna o resultado])
     
     ReturnZero --> End
+    ThrowNotFound --> End
 ```
 ---

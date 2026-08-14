@@ -22,20 +22,20 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to ${{ github.event.inputs.environment || 'dev' }}
+    name: Deploy to ${{ github.event.inputs.environment || 'test' }}
     runs-on: self-hosted
     timeout-minutes: 15
 
     permissions:
       contents: read
 
-    environment: ${{ github.event.inputs.environment || 'dev' }}
+    environment: ${{ github.event.inputs.environment || 'test' }}
 
     env:
-      TARGET_ENV: ${{ github.event.inputs.environment || 'dev' }}
+      TARGET_ENV: ${{ github.event.inputs.environment || 'test' }}
 
     concurrency:
-      group: nubank-training-${{ github.event.inputs.environment || 'dev' }}-${{ github.ref }}
+      group: nubank-training-${{ github.event.inputs.environment || 'test' }}-${{ github.ref }}
       cancel-in-progress: false
 
     steps:
@@ -90,7 +90,7 @@ jobs:
 
       - name: 🔨 Build & Test Project
         run: |
-          mvn clean test-compile surefire:test
+          mvn clean test
 
       # ------------------------------------------------------------------
       # Execute SonarQube Analysis
@@ -110,6 +110,7 @@ jobs:
             -Dsonar.projectName="Nubank Training (${TARGET_ENV^^})" \
             -Dsonar.sources=/usr/src/src/main/java \
             -Dsonar.java.binaries=/usr/src/target/classes \
+            -Dsonar.coverage.jacoco.xmlReportPaths=/usr/src/target/site/jacoco/jacoco.xml \
             -Dsonar.host.url="${{ vars.SONAR_HOST_URL }}" \
             -Dsonar.token="${{ secrets.SONAR_TOKEN }}"
 

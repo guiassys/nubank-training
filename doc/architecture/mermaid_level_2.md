@@ -49,15 +49,16 @@ flowchart TD
     Start([Início: payment accountId, amount, timestamp]) --> ProcessCashbacks("Chama processPendingCashbacks(timestamp)")
     
     ProcessCashbacks --> ValidateAmount{amount > 0?}
-    ValidateAmount -- Não --> ReturnFalse[Retorna false]
+    ValidateAmount -- Não --> ThrowInvalidAmount[Lança InvalidAmountException]
     
-    ValidateAmount -- Sim --> GetAccount[Busca a conta]
+    ValidateAmount -- Sim --> GetAccount[Busca a conta via getAccountById]
     GetAccount --> CheckAccount{Conta existe?}
-    CheckAccount -- Não --> ReturnFalse
+    CheckAccount -- Não --> ThrowNotFound[Lança AccountNotFoundException]
     
     CheckAccount -- Sim --> Withdraw["Chama saque com timestamp\naccount.withdraw(amount, timestamp)"]
     Withdraw --> End([Retorna o resultado do saque])
     
-    ReturnFalse --> End
+    ThrowInvalidAmount --> End
+    ThrowNotFound --> End
 ```
 ---

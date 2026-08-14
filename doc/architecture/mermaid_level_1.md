@@ -5,13 +5,13 @@
 flowchart TD
     Start([Início: create accountId]) --> CheckExists{"Conta já existe?\naccounts.containsKey(accountId)"}
     
-    CheckExists -- Sim --> ReturnFalse[Retorna false]
+    CheckExists -- Sim --> ThrowExists[Lança AccountAlreadyExistsException]
     CheckExists -- Não --> CreateAccount[Cria novo objeto Account]
     
-    CreateAccount --> PutInMap["Adiciona no mapa 'accounts'\naccounts.put(accountId, account)"]
+    CreateAccount --> PutInMap["Adiciona no mapa 'accounts'\naccounts.putIfAbsent(accountId, account)"]
     PutInMap --> ReturnTrue[Retorna true]
 
-    ReturnFalse --> End([Fim])
+    ThrowExists --> End([Fim])
     ReturnTrue --> End
 ```
 ---
@@ -22,12 +22,12 @@ flowchart TD
     Start([Início: deposit accountId, amount]) --> GetAccount["Busca a conta\ngetAccountById(accountId)"]
     
     GetAccount --> CheckAccount{Conta existe?}
-    CheckAccount -- Não --> ReturnError[Retorna -1]
+    CheckAccount -- Não --> ThrowNotFound[Lança AccountNotFoundException]
     CheckAccount -- Sim --> DepositAmount["Chama account.deposit(amount)"]
     
     DepositAmount --> GetBalance["Retorna o novo saldo\naccount.getBalance()"]
     
-    ReturnError --> End([Fim])
+    ThrowNotFound --> End([Fim])
     GetBalance --> End
 ```
 ---
@@ -35,23 +35,24 @@ flowchart TD
 ## Flow - transfer
 ```mermaid
 flowchart TD
-    Start([Início: transfer from, to, amount]) --> GetAccounts[Busca conta de origem e destino]
+    Start([Início: transfer from, to, amount]) --> ValidateInput{from == to OU amount <= 0?}
+    ValidateInput -- Sim --> ThrowException[Lança IllegalArgumentException]
+
+    ValidateInput -- Não --> GetAccounts[Busca contas de origem e destino]
+    GetAccounts --> CheckAccounts{Ambas existem?}
+    CheckAccounts -- Não --> ThrowNotFound[Lança AccountNotFoundException]
     
-    GetAccounts --> CheckAccounts{Ambas as contas existem?}
-    CheckAccounts -- Não --> ReturnFalse[Retorna false]
-    
-    CheckAccounts -- Sim --> ValidateInput{Origem == Destino\nOU amount <= 0?}
-    ValidateInput -- Sim --> ReturnFalse
-    
-    ValidateInput -- Não --> Withdraw["Tenta sacar da origem\nfromAccount.withdraw(amount)"]
+    CheckAccounts -- Sim --> Withdraw["Tenta sacar da origem\nfromAccount.withdraw(amount)"]
     
     Withdraw --> CheckWithdraw{Saque bem-sucedido?}
-    CheckWithdraw -- Não --> ReturnFalse
+    CheckWithdraw -- Não --> ThrowInsufficientBalance[Lança InsufficientBalanceException]
     
     CheckWithdraw -- Sim --> Deposit["Deposita na conta de destino\ntoAccount.deposit(amount)"]
     Deposit --> ReturnTrue[Retorna true]
 
-    ReturnFalse --> End([Fim])
+    ThrowException --> End([Fim])
+    ThrowNotFound --> End
+    ThrowInsufficientBalance --> End
     ReturnTrue --> End
 ```
 ---
@@ -62,10 +63,10 @@ flowchart TD
     Start([Início: balance accountId]) --> GetAccount["Busca a conta\ngetAccountById(accountId)"]
     
     GetAccount --> CheckAccount{Conta existe?}
-    CheckAccount -- Não --> ReturnError[Retorna -1]
+    CheckAccount -- Não --> ThrowNotFound[Lança AccountNotFoundException]
     CheckAccount -- Sim --> GetBalance["Retorna o saldo atual\naccount.getBalance()"]
     
-    ReturnError --> End([Fim])
+    ThrowNotFound --> End([Fim])
     GetBalance --> End
 ```
 ---
