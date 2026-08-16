@@ -1,15 +1,15 @@
-# Padrões de Projeto Utilizados
+# Used Design Patterns
 
-Este documento resume os principais padrões de projeto (Design Patterns) e de concorrência que foram aplicados no desenvolvimento do sistema de carteira digital.
+This document summarizes the main design and concurrency patterns applied in the development of the digital wallet system.
 
-| Nome do pattern | Descrição do uso |
+| Pattern Name | Usage Description |
 | :--- | :--- |
-| **Facade** | A interface `IWalletService` atua como uma fachada, provendo uma interface simplificada e unificada que orquestra as operações do sistema (criação de conta, transferências, etc.). Ela esconde a complexidade interna do gerenciamento de múltiplas estruturas de dados e da lógica de negócio. |
-| **Interface Segregation Principle (ISP)** | As funcionalidades da carteira foram divididas em interfaces menores e mais coesas (`IAccountAdminService`, `IAccountFinancialService`, `ITransactionService`, `IReportingService`). Isso evita que as classes clientes dependam de métodos que não utilizam, promovendo um design mais limpo e desacoplado. |
-| **Singleton** | A classe `WalletService` é implementada como um Singleton implícito no contexto da aplicação. Isso garante que exista apenas uma instância do serviço gerenciando o estado de todas as contas e transações, evitando inconsistências. |
-| **Repository** | A classe `WalletService` gerencia a coleção de entidades de domínio (contas e transações), abstraindo a fonte de dados (neste caso, mapas em memória) e centralizando o acesso e a persistência dos objetos. |
-| **Strategy** | O `MIN_HEAP_SPENDER_COMPARATOR` é uma implementação do padrão Strategy. Ele encapsula o algoritmo de comparação usado na fila de prioridade para determinar os "top spenders", permitindo que a lógica de ordenação seja definida e trocada de forma independente. |
-| **State** | O `Account` utiliza o padrão State para gerenciar o estado de "bloqueado". Isso permite que o comportamento do objeto mude dinamicamente (impedindo débitos), sem a necessidade de condicionais (`if/else`) espalhadas pelo código que utiliza a conta. |
-| **Command** | O `CashbackEvent` funciona como um objeto de comando. Ele encapsula toda a informação necessária para executar uma ação (aplicar o cashback) em um momento futuro. A `cashbackQueue` atua como um agendador, processando esses comandos quando eles "maturam". |
-| **Monitor Object** | O `Account` atua como um monitor, usando blocos `synchronized` para proteger seu estado interno (saldo, histórico) em um ambiente concorrente. Isso garante que apenas uma thread possa modificar seus dados por vez, prevenindo condições de corrida. |
-| **Ordered Locking** | Na operação de `transfer`, o padrão de bloqueio ordenado é usado para prevenir deadlocks. Ao adquirir os locks das contas de origem e destino sempre na mesma ordem (baseada no ID da conta), elimina-se a possibilidade de um ciclo de espera mortal entre as threads. |
+| **Facade** | The `IWalletService` interface acts as a facade, providing a simplified and unified interface that orchestrates system operations (account creation, transfers, etc.). It hides the internal complexity of managing multiple data structures and business logic. |
+| **Interface Segregation Principle (ISP)** | Wallet features were divided into smaller, more cohesive interfaces (`IAccountAdminService`, `IAccountFinancialService`, `ITransactionService`, `IReportingService`). This prevents client classes from depending on methods they do not use, promoting a cleaner and decoupled design. |
+| **Singleton** | The `WalletService` class is implemented as an implicit Singleton within the application context. This ensures that only a single instance of the service exists to manage the state of all accounts and transactions, avoiding inconsistencies. |
+| **Repository** | The `WalletService` class manages the collection of domain entities (accounts and transactions), abstracting the data source (in this case, in-memory maps) and centralizing object access and persistence. |
+| **Strategy** | `MIN_HEAP_SPENDER_COMPARATOR` is an implementation of the Strategy pattern. It encapsulates the comparison algorithm used in the priority queue to determine top spenders, allowing the sorting logic to be defined and swapped independently. |
+| **State** | `Account` utilizes the State pattern to manage the "frozen/locked" state. This allows the object's behavior to change dynamically (preventing debits) without scattering conditional (`if/else`) checks throughout the code that interacts with the account. |
+| **Command** | `CashbackEvent` operates as a command object. It encapsulates all necessary information to execute an action (applying cashback) at a future point in time. The `cashbackQueue` acts as a scheduler, processing these commands once they mature. |
+| **Monitor Object** | `Account` acts as a monitor object, using `synchronized` blocks to protect its internal state (balance, spending history) in a concurrent environment. This ensures that only one thread can modify its data at a time, preventing race conditions. |
+| **Ordered Locking** | In the `transfer` operation, the ordered locking pattern is used to prevent deadlocks. By acquiring locks on the source and target accounts always in the same sequence (based on account ID), the possibility of a lethal circular wait condition between threads is eliminated. |

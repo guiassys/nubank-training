@@ -1,22 +1,22 @@
-# Release Notes - Nível 3
+# Release Notes - Level 3
 
-## Resumo do Nível 3
+## Summary of Level 3
 
-O Nível 3 adiciona mecanismos financeiros avançados, como transações com agendamento, estornos e consultas em janelas de tempo deslizantes.
+Level 3 adds advanced financial mechanisms, such as scheduled transactions, refunds, and queries over sliding time windows.
 
-### Funcionalidades Implementadas:
+### Implemented Features:
 
-- **`PAYMENT_WITH_CASHBACK <accountId> <amount> <timestamp> <cashbackPercent>`**: Realiza um pagamento e agenda um cashback para ser creditado na conta do usuário após 24 horas.
-- **`REFUND <accountId> <transactionId> <timestamp>`**: Estorna um pagamento, devolvendo o valor ao saldo do usuário e cancelando qualquer cashback pendente associado.
-- **`SPENT_IN_WINDOW <accountId> <windowSizeMs> <currentTimestamp>`**: Calcula o total de gastos de uma conta dentro de uma janela de tempo deslizante.
+- **`PAYMENT_WITH_CASHBACK <accountId> <amount> <timestamp> <cashbackPercent>`**: Executes a payment and schedules a cashback to be credited to the user's account after 24 hours.
+- **`REFUND <accountId> <transactionId> <timestamp>`**: Refunds a payment, returning the amount to the user's balance and canceling any associated pending cashback.
+- **`SPENT_IN_WINDOW <accountId> <windowSizeMs> <currentTimestamp>`**: Calculates the total spending of an account within a sliding time window.
 
 ---
 
-## Aprendizados & Anotações — Nível 3
+## Learnings & Notes — Level 3
 
-| Tópico | Anotações / Reflexões |
+| Topic | Notes / Reflections |
 | :----- | :-------------------- |
-| **Estruturas de Dados** | **`TreeMap<Long, Integer>`**: Utilizado em `Account` para manter a linha do tempo de gastos e realizar consultas por janela de tempo (`.subMap()`) em $O(\log N)$.<br>**`PriorityQueue<CashbackEvent>`**: Min-Heap para simular a fila de liquidação de cashbacks por ordem de tempo.<br>**`Map<String, Transaction>` / `Map<String, CashbackEvent>`**: Mapeamento de IDs para permitir estorno e cancelamento de eventos em $O(1)$. |
-| **Complexidade** | **`paymentWithCashback()`**: $O(\log E)$ (inserção na Heap de eventos).<br>**`refund()`**: $O(1)$ para cancelamento de evento + $O(\log T)$ para reajuste na árvore de transações.<br>**`spentInWindow()`**: $O(\log T + V)$ onde $T$ é o total de transações e $V$ é o número de transações na janela. |
-| **Decisões de Design** | **Processamento de Eventos Futuros**: Foi implementado um mecanismo de "lazy processing" para os cashbacks. Antes de cada operação, o sistema verifica e processa quaisquer cashbacks pendentes que já atingiram seu tempo de maturação.<br>**Cálculo com Inteiros**: O cálculo de cashback usa `(amount * cashbackPercent) / 100` para evitar erros de precisão com ponto flutuante. |
-| **Tratamento de Casos de Borda**| - Cancelamento de cashback pendente via *flag* `isCancelled()` caso um `REFUND` ocorra antes da maturação.<br>- Suporte a múltiplos pagamentos no mesmo `timestamp` com `spendingHistory.merge(timestamp, amount, Integer::sum)`. |
+| **Data Structures** | **`TreeMap<Long, Integer>`**: Used in `Account` to maintain the spending timeline and perform time window queries (`.subMap()`) in $O(\log N)$.<br>**`PriorityQueue<CashbackEvent>`**: Min-Heap used to simulate the cashback settlement queue ordered by time.<br>**`Map<String, Transaction>` / `Map<String, CashbackEvent>`**: ID mapping to allow $O(1)$ lookup for refunds and event cancellations. |
+| **Complexity** | **`paymentWithCashback()`**: $O(\log E)$ (insertion into the event Heap).<br>**`refund()`**: $O(1)$ for event cancellation + $O(\log T)$ for adjusting the transaction tree.<br>**`spentInWindow()`**: $O(\log T + V)$ where $T$ is the total number of transactions and $V$ is the number of transactions within the window. |
+| **Design Decisions** | **Future Event Processing**: Implemented a "lazy processing" mechanism for cashbacks. Before executing any operation, the system checks and processes any pending cashbacks that have reached their maturity time.<br>**Integer Calculation**: Cashback calculation uses `(amount * cashbackPercent) / 100` to avoid floating-point precision errors. |
+| **Edge Case Handling**| - Cancellation of pending cashback via an `isCancelled()` flag if a `REFUND` occurs before maturity.<br>- Support for multiple payments at the same `timestamp` using `spendingHistory.merge(timestamp, amount, Integer::sum)`. |

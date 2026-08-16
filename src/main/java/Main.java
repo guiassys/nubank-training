@@ -31,7 +31,7 @@ public class Main {
             index++;
         }
 
-        System.out.print("\n\n -- Boa sorte! --");
+        System.out.print("\n\n -- # Nubank Training - Digital wallet system --");
 
     }
 
