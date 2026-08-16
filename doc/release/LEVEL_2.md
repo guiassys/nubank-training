@@ -1,22 +1,22 @@
-# Release Notes - Nível 2
+# Release Notes - Level 2
 
-## Resumo do Nível 2
+## Summary of Level 2
 
-O Nível 2 expande o sistema com inteligência financeira, introduzindo transações temporais e a capacidade de gerar relatórios de alto desempenho sobre os gastos dos usuários.
+Level 2 expands the system with financial intelligence, introducing time-based transactions and the ability to generate high-performance reports on user spending.
 
-### Funcionalidades Implementadas:
+### Implemented Features:
 
-- **`PAYMENT <accountId> <amount> <timestamp>`**: Executa um pagamento a partir de uma conta em um instante de tempo específico, debitando o valor do saldo e contabilizando-o no total de gastos do usuário.
-- **`TOP_SPENDERS <k>`**: Retorna uma lista com os `k` usuários que mais gastaram no sistema. Em caso de empate no valor, o critério de desempate é a ordem alfabética do `accountId`.
+- **`PAYMENT <accountId> <amount> <timestamp>`**: Executes a payment from an account at a specific point in time, deducting the amount from the balance and recording it toward the user's total spending.
+- **`TOP_SPENDERS <k>`**: Returns a list of the top `k` users who spent the most in the system. In the event of a tie in the spent amount, the tie-breaker criteria is the alphabetical order of the `accountId`.
 
 ---
 
-## Aprendizados & Anotações — Nível 2
+## Learnings & Notes — Level 2
 
-| Tópico | Anotações / Reflexões |
+| Topic | Notes / Reflections |
 | :----- | :-------------------- |
-| **Estruturas de Dados** | Utilização de `PriorityQueue` (Min-Heap) de tamanho máximo $K$ para a funcionalidade `TOP_SPENDERS`. A raiz da heap armazena o "pior" candidato do Top K, permitindo descarte eficiente. |
-| **Complexidade** | **`payment()`**: tempo **$O(1)$** e espaço **$O(1)$**.<br>**`topSpenders(k)`**: tempo **$O(N \log K)$** (onde $N$ é o total de contas com gastos) e espaço adicional **$O(K)$** para a `PriorityQueue`. |
-| **Decisões de Design** | - O `Comparator` da Min-Heap foi extraído para uma constante `private static final`, melhorando a performance e a legibilidade.<br>- O atributo `totalSpent` foi encapsulado na entidade `Account`, sendo atualizado automaticamente a cada chamada de `withdraw()`. |
-| **Comparatores e Empates** | Para a Min-Heap, no desempate de valor gasto igual, a conta com ID lexicograficamente **maior** é considerada "pior" para fins de ordenação interna da heap. A ordem final correta é restaurada ao final do processo. |
-| **Tratamento de Casos de Borda**| - Verificação para $K \le 0$ retornando uma lista vazia.<br>- Filtro para ignorar contas com `totalSpent <= 0`.<br>- Suporte para quando $K$ for maior que o número de contas com gastos. |
+| **Data Structures** | Used a `PriorityQueue` (Min-Heap) capped at size $K$ for the `TOP_SPENDERS` feature. The root of the heap stores the "worst" candidate in the Top K, allowing efficient eviction. |
+| **Complexity** | **`payment()`**: **$O(1)$** time and **$O(1)$** space.<br>**`topSpenders(k)`**: **$O(N \log K)$** time (where $N$ is the total number of accounts with spending) and **$O(K)$** auxiliary space for the `PriorityQueue`. |
+| **Design Decisions** | - The Min-Heap `Comparator` was extracted into a `private static final` constant, improving performance and readability.<br>- The `totalSpent` attribute was encapsulated within the `Account` entity and is automatically updated on every `withdraw()` call. |
+| **Comparators & Ties** | For the Min-Heap, when amounts spent are equal, the account with the lexicographically **greater** ID is considered "worse" for internal heap ordering purposes. The correct final order is restored at the end of the process. |
+| **Edge Case Handling**| - Validation for $K \le 0$ returning an empty list.<br>- Filtering to ignore accounts with `totalSpent <= 0`.<br>- Gracefully handling scenarios where $K$ is larger than the total number of accounts with spending. |

@@ -1,27 +1,27 @@
-### PRÉ-REQUISITOS
+### PREREQUISITES
 
-Leia atentamente o arquivo a seguir:
+Read carefully the following file:
 
 `\\wsl.localhost\Ubuntu\home\guiassys\devtools\repos\nubank-training\.github\copilot-instructions.md`
 
-### Código da tarefa: 01
+### Task code: 01
 
-### Problema a ser resolvido
+### Problem to be solved
 // TODO
 
-### Analisar atentamente os arquivos
+### Analyze the files carefully
 // TODO
 
-### ATENÇÃO! Siga atentamente as regras a seguir:
+### ATTENTION! Strictly follow the rules below:
 
-1. Altere apenas o que foi solicitado e faça alterações minimalistas.
-2. Utilize inglês em todo o código-fonte.
-3. Não utilize ícones, `emojis`
-4. Reutilize recursos existentes sempre que possível.
+1. Only change what was requested and make minimalist changes.
+2. Use English throughout all source code.
+3. Do not use icons or emojis.
+4. Reuse existing resources whenever possible.
 
-### Resultado esperado
+### Expected result
 
-1. Faça uma análise, arquivo por arquivo, para compreender a aplicação. Avance para o próximo arquivo somente após a minha autorização.
-2. Após concluir a análise de todos os arquivos, execute as seguintes etapas:
+1. Perform a file-by-file analysis to understand the application. Move to the next file only after my authorization.
+2. After completing the analysis of all files, perform the following steps:
    - // TODO
-3. Ao final, // TODO 
+3. At the end, // TODO

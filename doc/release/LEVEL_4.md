@@ -1,22 +1,22 @@
-# Release Notes - Nível 4
+# Release Notes - Level 4
 
-## Resumo do Nível 4
+## Summary of Level 4
 
-O Nível 4 robustece o sistema para um ambiente de produção, introduzindo **segurança contra concorrência** e preparando o terreno para regras de negócio complexas. Esta é a base para um sistema financeiro confiável e escalável.
+Level 4 hardens the system for a production environment, introducing **concurrency safety** and laying the groundwork for complex business rules. This serves as the foundation for a reliable and scalable financial system.
 
-### Melhorias Implementadas (Etapa 1):
+### Implemented Improvements (Step 1):
 
-- **Thread Safety em `model.Account`**: Todos os métodos que acessam ou modificam o estado da conta (saldo, histórico de gastos) foram sincronizados, garantindo que as operações em uma única conta sejam atômicas e consistentes.
-- **Coleções Concorrentes e Locks Granulares em `service.WalletService`**: As estruturas de dados principais (`HashMap`, `PriorityQueue`) foram substituídas por suas contrapartes concorrentes (`ConcurrentHashMap`, `PriorityBlockingQueue`). A sincronização global nos métodos de serviço foi removida para eliminar o gargalo de concorrência (*lock contention*), mantendo a sincronização isolada apenas no bloco do `cashbackQueue`.
-- **Prevenção de Deadlock em Transferências**: Foi implementado um mecanismo de bloqueio ordenado (`ordered locking`) no método `transfer`, que trava os recursos (contas) em uma ordem consistente (lexicográfica) para evitar o risco de *deadlocks* durante transferências simultâneas.
+- **Thread Safety in `model.Account`**: All methods that access or modify the account state (balance, spending history) were synchronized, ensuring that operations on a single account are atomic and consistent.
+- **Concurrent Collections and Granular Locks in `service.WalletService`**: Core data structures (`HashMap`, `PriorityQueue`) were replaced with their concurrent counterparts (`ConcurrentHashMap`, `PriorityBlockingQueue`). Global synchronization on service methods was removed to eliminate lock contention bottlenecks, restricting isolated synchronization solely to the `cashbackQueue` block.
+- **Deadlock Prevention in Transfers**: An ordered locking mechanism was implemented in the `transfer` method, which acquires locks on resources (accounts) in a consistent (lexicographical) order to prevent deadlock risks during concurrent transfers.
 
 ---
 
-## Aprendizados & Anotações — Nível 4 (Etapa 1)
+## Learnings & Notes — Level 4 (Step 1)
 
-| Tópico | Anotações / Reflexões |
+| Topic | Notes / Reflections |
 | :----- | :-------------------- |
-| **Concorrência vs. Performance** | A remoção do `synchronized` nos métodos públicos do `WalletService` evita que requisições de contas distintas entrem em fila de espera desnecessária. O uso de coleções concorrentes combinado com bloqueios granulares (no `cashbackQueue` e dentro do próprio objeto `Account`) maximiza o *throughput* concorrente mantendo a consistência. |
-| **Prevenção de Deadlock** | O padrão de *ordered locking* é uma técnica clássica e essencial para evitar deadlocks. Ao adquirir os bloqueios sempre na mesma ordem (neste caso, pela ordem lexicográfica dos `accountId`), garantimos que um ciclo de espera mortal entre duas ou mais threads nunca ocorra. |
-| **Atomicidade** | O uso de `ConcurrentHashMap.putIfAbsent()` para a criação de contas é um exemplo de como aproveitar operações atômicas já fornecidas pelas coleções concorrentes para simplificar o código e garantir a correção. |
-| **Design para Concorrência** | A decisão de tornar a entidade `Account` responsável por sua própria consistência interna (sincronizando seus métodos) e deixar o `WalletService` orquestrar as operações entre múltiplas contas é uma separação de responsabilidades clara que facilita a manutenção e o raciocínio sobre o código concorrente. |
+| **Concurrency vs. Performance** | Removing `synchronized` from public `WalletService` methods prevents requests for distinct accounts from queuing up unnecessarily. Combining concurrent collections with granular locks (on the `cashbackQueue` and within the `Account` object itself) maximizes concurrent throughput while maintaining consistency. |
+| **Deadlock Prevention** | The ordered locking pattern is a classic and essential technique for avoiding deadlocks. By always acquiring locks in the same sequence (in this case, by the lexicographical order of the `accountId`), we guarantee that a lethal circular wait condition between two or more threads can never occur. |
+| **Atomicity** | Using `ConcurrentHashMap.putIfAbsent()` for account creation demonstrates how leveraging atomic operations provided by concurrent collections simplifies code while ensuring correctness. |
+| **Design for Concurrency** | Decoupling concerns by making the `Account` entity responsible for its own internal consistency (synchronizing its methods) while letting `WalletService` orchestrate multi-account operations creates a clear separation of concerns, making concurrent code easier to maintain and reason about. |

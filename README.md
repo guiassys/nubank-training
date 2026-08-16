@@ -1,75 +1,52 @@
-# Nubank Training
+# Nubank Training - Digital wallet system,
 
-> **Objetivo:** Projeto voltado para preparação em processos seletivos técnicos, focado em algoritmos, estruturas de dados, lógica de negócio e desenvolvimento Java (estilo CodeSignal).
+> **Objective:** Project designed for technical interview preparation, focusing on algorithms, data structures, business logic, and Java development (CodeSignal style).
 
 ---
 
-## Ambiente de Desenvolvimento
+## Development Environment
 
-| Componente | Especificação |
+| Component | Specification |
 | :--- | :--- |
 | **Java** | 21 |
 | **Maven** | 3.8.7 |
 | **IDE** | IntelliJ IDEA |
-| **SO** | Ubuntu (WSL2) |
+| **OS** | Ubuntu (WSL2) |
 
 ---
 
-## Simulado 01 — Sistema de Carteiras Digitais
+## Mock Assessment 01 — Digital Wallet System
 
-O projeto simula o núcleo de um sistema de carteiras digitais, implementado de forma incremental em três níveis.
-
----
-
-### 🟢 Nível 1 — Operações Básicas
-
-O Nível 1 introduz o núcleo do sistema, permitindo a criação de contas e a realização de operações financeiras básicas.
-
-| Comando | Sintaxe | Descrição |
-| :--- | :--- | :--- |
-| `CREATE` | `CREATE <accountId>` | Cria uma nova conta com saldo inicial zero. |
-| `DEPOSIT` | `DEPOSIT <accountId> <amount>` | Adiciona um valor ao saldo de uma conta. |
-| `TRANSFER` | `TRANSFER <from> <to> <amount>` | Transfere um valor entre duas contas. |
-| `BALANCE` | `BALANCE <accountId>` | Consulta o saldo de uma conta. |
-
-> Para mais detalhes sobre a implementação, consulte o [Release Notes do Nível 1](./doc/release/LEVEL_1.md).
+The project simulates the core of a digital wallet system, implemented incrementally across three levels.
 
 ---
 
-### 🟡 Nível 2 — Agregadores, Histórico e Métricas (Top K)
+### 🟢 Level 1 — Basic Operations
 
-O Nível 2 expande o sistema com inteligência financeira, introduzindo transações temporais e relatórios de gastos.
+Level 1 introduces the system core, allowing account creation and basic financial operations.
 
-| Comando | Sintaxe | Descrição |
-| :--- | :--- | :--- |
-| `PAYMENT` | `PAYMENT <accountId> <amount> <timestamp>` | Executa um pagamento, debitando o valor do saldo e contabilizando-o no total de gastos. |
-| `TOP_SPENDERS` | `TOP_SPENDERS <k>` | Retorna os `k` usuários que mais gastaram no sistema. |
-
-> Para mais detalhes sobre a implementação, consulte o [Release Notes do Nível 2](./doc/release/LEVEL_2.md).
+> For more implementation details, refer to the [Level 1 Release Notes](./doc/release/LEVEL_1.md).
 
 ---
 
-### 🟠 Nível 3 — Operações Temporais Avançadas
+### 🟡 Level 2 — Aggregators, History and Metrics (Top K)
 
-O Nível 3 adiciona mecanismos financeiros avançados, como cashbacks, estornos e consultas em janelas de tempo.
+Level 2 expands the system with financial intelligence, introducing time-based transactions and spending reports.
 
-| Comando | Sintaxe | Descrição |
-| :--- | :--- | :--- |
-| `PAYMENT_WITH_CASHBACK` | `PAYMENT_WITH_CASHBACK <accountId> <amount> <timestamp> <cashbackPercent>` | Realiza um pagamento e agenda um cashback para ser creditado após 24 horas. |
-| `REFUND` | `REFUND <accountId> <transactionId> <timestamp>` | Estorna um pagamento e cancela qualquer cashback pendente associado. |
-| `SPENT_IN_WINDOW` | `SPENT_IN_WINDOW <accountId> <windowSizeMs> <currentTimestamp>` | Calcula o total de gastos de uma conta em uma janela de tempo deslizante. |
-
-> Para mais detalhes sobre a implementação, consulte o [Release Notes do Nível 3](./doc/release/LEVEL_3.md).
+> For more implementation details, refer to the [Level 2 Release Notes](./doc/release/LEVEL_2.md).
 
 ---
 
-### 🔵 Nível 4 — Concorrência e Robustez
+### 🟠 Level 3 — Advanced Time-Based Operations
 
-O Nível 4 robustece o sistema para um ambiente de produção, introduzindo **segurança contra concorrência** e preparando o terreno para regras de negócio complexas.
+Level 3 adds advanced financial mechanisms, such as cashbacks, refunds, and sliding time window queries.
 
-**Melhorias Implementadas:**
-- **Thread Safety** em `model.Account`.
-- **Coleções Concorrentes e Locks Granulares** em `service.WalletService`.
-- **Prevenção de Deadlock** em transferências com *ordered locking*.
+> For more implementation details, refer to the [Level 3 Release Notes](./doc/release/LEVEL_3.md).
 
-> Para mais detalhes sobre a implementação, consulte o [Release Notes do Nível 4](./doc/release/LEVEL_4.md).
+---
+
+### 🔵 Level 4 — Concurrency and Robustness
+
+Level 4 hardens the system for a production environment, introducing **concurrency safety** and laying the groundwork for complex business rules.
+
+> For more implementation details, refer to the [Level 4 Release Notes](./doc/release/LEVEL_4.md).
